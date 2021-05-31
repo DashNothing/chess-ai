@@ -1,0 +1,1 @@
+{"version":3,"sources":["webpack://src/index.css"],"names":[],"mappings":"AAAA,EACC,QAAS,CACT,SAAU,CACV,qBACD,CAEA,KACC,+BAAiC,CACjC,wBAAyB,CACzB,aACD","file":"main.d66a8b3a.chunk.css","sourcesContent":["* {\n\tmargin: 0;\n\tpadding: 0;\n\tbox-sizing: border-box;\n}\n\nbody {\n\tfont-family: \"Nunito\", sans-serif;\n\tbackground-color: #655057;\n\tcolor: #f6edcd;\n}\n"]}
