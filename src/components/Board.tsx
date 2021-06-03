@@ -4,61 +4,62 @@ import React, { useEffect, useState } from "react";
 import { jsx } from "@emotion/react";
 import styled from "@emotion/styled";
 
-import { Piece, PieceType, Color, Move, CastlingRights } from "../interfaces";
+import {
+	Piece,
+	PieceType,
+	Color,
+	Move,
+	CastlingRights,
+	GameState,
+} from "../interfaces";
 
 import { generatePseudoLegalMoves, generateLegalMoves } from "../GameLogic";
 
 type PropTypes = {
-	boardState: (Piece | null)[];
-	currentPlayer: Color;
-	castlingRights: CastlingRights;
+	gameState: GameState;
 	lastMove: Move | null;
 	onMakeMove: (move: Move) => void;
 };
 
-const Board = ({
-	boardState,
-	currentPlayer,
-	castlingRights,
-	lastMove,
-	onMakeMove,
-}: PropTypes) => {
+const Board = ({ gameState, lastMove, onMakeMove }: PropTypes) => {
 	const [markedLegalMoveSquares, setMarkedLegalMoveSquares] = useState<
 		number[]
 	>([]);
 
-	const boardTiles: React.ReactNode = boardState.map((piece, index) => {
-		return (
-			<Square
-				key={index}
-				isLight={
-					!(Math.floor(index / 8) % 2 != 0 ? index % 2 != 0 : index % 2 == 0)
-				}
-				row={8 - Math.floor(index / 8)}
-				image={getImageForPiece(piece)}
-				onDragOver={(e) => onDragOver(e)}
-				onDrop={(e) => onDrop(e, index)}
-				isMarkedLegal={markedLegalMoveSquares.includes(index)}
-				isMarkedLastMove={
-					lastMove?.fromSquare == index || lastMove?.toSquare == index
-				}
-			>
-				{piece ? (
-					piece.color == currentPlayer ? (
-						<div
-							draggable
-							onDragStart={(e) =>
-								onDragStart(e, index, getImageForPiece(piece))
-							}
-							onDragEnd={(e) => onDragEnd(e)}
-						></div>
-					) : (
-						<div></div>
-					)
-				) : null}
-			</Square>
-		);
-	});
+	const boardTiles: React.ReactNode = gameState.boardState.map(
+		(piece, index) => {
+			return (
+				<Square
+					key={index}
+					isLight={
+						!(Math.floor(index / 8) % 2 != 0 ? index % 2 != 0 : index % 2 == 0)
+					}
+					row={8 - Math.floor(index / 8)}
+					image={getImageForPiece(piece)}
+					onDragOver={(e) => onDragOver(e)}
+					onDrop={(e) => onDrop(e, index)}
+					isMarkedLegal={markedLegalMoveSquares.includes(index)}
+					isMarkedLastMove={
+						lastMove?.fromSquare == index || lastMove?.toSquare == index
+					}
+				>
+					{piece ? (
+						piece.color == gameState.currentPlayer ? (
+							<div
+								draggable
+								onDragStart={(e) =>
+									onDragStart(e, index, getImageForPiece(piece))
+								}
+								onDragEnd={(e) => onDragEnd(e)}
+							></div>
+						) : (
+							<div></div>
+						)
+					) : null}
+				</Square>
+			);
+		}
+	);
 
 	const onDragOver = (e: React.DragEvent) => {
 		e.preventDefault();
@@ -72,11 +73,7 @@ const Board = ({
 
 		e.dataTransfer.setDragImage(dragImage, 45, 45);
 
-		let allLegalMoves = generateLegalMoves(
-			boardState,
-			currentPlayer,
-			castlingRights
-		);
+		let allLegalMoves = generateLegalMoves(gameState);
 
 		setMarkedLegalMoveSquares(
 			allLegalMoves

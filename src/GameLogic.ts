@@ -18,18 +18,15 @@ import {
 	Generates moves without check detection
 	Returns a list of all pesudo legal moves
 */
-export const generatePseudoLegalMoves = (
-	boardState: (Piece | null)[],
-	sideColor: Color,
-	castlingRights: CastlingRights
-): Move[] => {
+export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 	let pseudoLegalMoves: Move[] = [];
 
-	let pieces: [Piece | null, number][] = boardState.map((piece, index) => [
-		piece,
-		index,
-	]);
-	pieces = pieces.filter(([piece, index]) => piece?.color == sideColor);
+	let pieces: [Piece | null, number][] = gameState.boardState.map(
+		(piece, index) => [piece, index]
+	);
+	pieces = pieces.filter(
+		([piece, index]) => piece?.color == gameState.currentPlayer
+	);
 
 	// First 4 are orthogonal, last 4 are diagonals (N, S, W, E, NW, SE, NE, SW)
 	const directionOffsets = [8, -8, -1, 1, 7, -7, 9, -9];
@@ -47,7 +44,10 @@ export const generatePseudoLegalMoves = (
 						let targetSquare = squareIndex + currentDirOffset * (n + 1);
 
 						// Blocked by friendly piece, so stop looking in this direction
-						if (boardState[targetSquare]?.color == sideColor) {
+						if (
+							gameState.boardState[targetSquare]?.color ==
+							gameState.currentPlayer
+						) {
 							break;
 						}
 
@@ -58,8 +58,9 @@ export const generatePseudoLegalMoves = (
 
 						// Can caputure, so stop looking in this direction
 						if (
-							boardState[targetSquare] != null &&
-							boardState[targetSquare]?.color != sideColor
+							gameState.boardState[targetSquare] != null &&
+							gameState.boardState[targetSquare]?.color !=
+								gameState.currentPlayer
 						) {
 							break;
 						}
@@ -79,7 +80,10 @@ export const generatePseudoLegalMoves = (
 						let targetSquare = squareIndex + currentDirOffset * (n + 1);
 
 						// Blocked by friendly piece, so stop looking in this direction
-						if (boardState[targetSquare]?.color == sideColor) {
+						if (
+							gameState.boardState[targetSquare]?.color ==
+							gameState.currentPlayer
+						) {
 							break;
 						}
 
@@ -90,8 +94,9 @@ export const generatePseudoLegalMoves = (
 
 						// Can caputure, so stop looking in this direction
 						if (
-							boardState[targetSquare] != null &&
-							boardState[targetSquare]?.color != sideColor
+							gameState.boardState[targetSquare] != null &&
+							gameState.boardState[targetSquare]?.color !=
+								gameState.currentPlayer
 						) {
 							break;
 						}
@@ -111,7 +116,10 @@ export const generatePseudoLegalMoves = (
 						let targetSquare = squareIndex + currentDirOffset * (n + 1);
 
 						// Blocked by friendly piece, so stop looking in this direction
-						if (boardState[targetSquare]?.color == sideColor) {
+						if (
+							gameState.boardState[targetSquare]?.color ==
+							gameState.currentPlayer
+						) {
 							break;
 						}
 
@@ -122,8 +130,9 @@ export const generatePseudoLegalMoves = (
 
 						// Can caputure, so stop looking in this direction
 						if (
-							boardState[targetSquare] != null &&
-							boardState[targetSquare]?.color != sideColor
+							gameState.boardState[targetSquare] != null &&
+							gameState.boardState[targetSquare]?.color !=
+								gameState.currentPlayer
 						) {
 							break;
 						}
@@ -138,7 +147,9 @@ export const generatePseudoLegalMoves = (
 
 				// Filter out the moves that land on friendly pieces
 				allKnightMoves.forEach((targetSquare) => {
-					if (boardState[targetSquare]?.color != sideColor) {
+					if (
+						gameState.boardState[targetSquare]?.color != gameState.currentPlayer
+					) {
 						pseudoLegalMoves.push({
 							fromSquare: squareIndex,
 							toSquare: targetSquare,
@@ -155,7 +166,9 @@ export const generatePseudoLegalMoves = (
 
 				// Filter out the moves that land on friendly pieces
 				allKingMoves.forEach((targetSquare) => {
-					if (boardState[targetSquare]?.color != sideColor) {
+					if (
+						gameState.boardState[targetSquare]?.color != gameState.currentPlayer
+					) {
 						pseudoLegalMoves.push({
 							fromSquare: squareIndex,
 							toSquare: targetSquare,
@@ -165,19 +178,19 @@ export const generatePseudoLegalMoves = (
 
 				// Castling
 				const canCastleShort =
-					sideColor == Color.White
-						? castlingRights.whiteShort
-						: castlingRights.blackShort;
+					gameState.currentPlayer == Color.White
+						? gameState.castlingRights.whiteShort
+						: gameState.castlingRights.blackShort;
 
 				const canCastleLong =
-					sideColor == Color.White
-						? castlingRights.whiteLong
-						: castlingRights.blackLong;
+					gameState.currentPlayer == Color.White
+						? gameState.castlingRights.whiteLong
+						: gameState.castlingRights.blackLong;
 
 				if (canCastleShort) {
 					if (
-						boardState[squareIndex + 1] == null &&
-						boardState[squareIndex + 2] == null
+						gameState.boardState[squareIndex + 1] == null &&
+						gameState.boardState[squareIndex + 2] == null
 					) {
 						pseudoLegalMoves.push({
 							fromSquare: squareIndex,
@@ -188,8 +201,8 @@ export const generatePseudoLegalMoves = (
 
 				if (canCastleLong) {
 					if (
-						boardState[squareIndex - 1] == null &&
-						boardState[squareIndex - 2] == null
+						gameState.boardState[squareIndex - 1] == null &&
+						gameState.boardState[squareIndex - 2] == null
 					) {
 						pseudoLegalMoves.push({
 							fromSquare: squareIndex,
@@ -207,7 +220,7 @@ export const generatePseudoLegalMoves = (
 					piece.color == Color.White ? squareIndex + 8 : squareIndex - 8;
 
 				if (targetSquare >= 0 && targetSquare < 64) {
-					if (boardState[targetSquare] == null)
+					if (gameState.boardState[targetSquare] == null)
 						pseudoLegalMoves.push({
 							fromSquare: squareIndex,
 							toSquare: targetSquare,
@@ -221,8 +234,8 @@ export const generatePseudoLegalMoves = (
 
 				if (Math.floor(squareIndex / 8) == startingRank) {
 					if (
-						boardState[targetSquare] == null &&
-						boardState[doubleMoveSquare] == null
+						gameState.boardState[targetSquare] == null &&
+						gameState.boardState[doubleMoveSquare] == null
 					) {
 						pseudoLegalMoves.push({
 							fromSquare: squareIndex,
@@ -241,8 +254,9 @@ export const generatePseudoLegalMoves = (
 
 				pawnCaptures.forEach((captureSquare) => {
 					if (
-						boardState[captureSquare]?.color != sideColor &&
-						boardState[captureSquare] != null
+						gameState.boardState[captureSquare]?.color !=
+							gameState.currentPlayer &&
+						gameState.boardState[captureSquare] != null
 					) {
 						pseudoLegalMoves.push({
 							fromSquare: squareIndex,
@@ -266,29 +280,19 @@ export const generatePseudoLegalMoves = (
 	Generates the moves with check detecion by generating pseudo legal moves and removing illegal moves
 	Returns a list of all legal moves
 */
-export const generateLegalMoves = (
-	boardState: (Piece | null)[],
-	sideColor: Color,
-	castlingRights: CastlingRights
-): Move[] => {
+export const generateLegalMoves = (gameState: GameState): Move[] => {
 	let legalMoves: Move[] = [];
-	let pseudoLegalMoves: Move[] = generatePseudoLegalMoves(
-		boardState,
-		sideColor,
-		castlingRights
-	);
+	let pseudoLegalMoves: Move[] = generatePseudoLegalMoves(gameState);
 
 	pseudoLegalMoves.forEach((move) => {
-		const boardAfterMove = makeVirtualMove(boardState, move);
-		const opponentResponses = generatePseudoLegalMoves(
-			boardAfterMove,
-			sideColor == Color.White ? Color.Black : Color.White,
-			castlingRights
-		);
+		const gameStateAfterMove = makeMove(gameState, move);
+		const opponentResponses = generatePseudoLegalMoves(gameStateAfterMove);
 
-		let myKingSquare = boardAfterMove.indexOf(
-			boardAfterMove.find(
-				(piece) => piece?.type == PieceType.King && piece?.color == sideColor
+		let myKingSquare = gameStateAfterMove.boardState.indexOf(
+			gameStateAfterMove.boardState.find(
+				(piece) =>
+					piece?.type == PieceType.King &&
+					piece?.color == gameState.currentPlayer
 			) || null
 		);
 
@@ -305,26 +309,126 @@ export const generateLegalMoves = (
 	return legalMoves;
 };
 
-export const makeVirtualMove = (
-	boardState: (Piece | null)[],
-	move: Move
-): (Piece | null)[] => {
-	let tempBoardState: (Piece | null)[] = [...boardState];
-	let movedPiece = tempBoardState[move.fromSquare];
-	tempBoardState[move.fromSquare] = null;
-	tempBoardState[move.toSquare] = movedPiece;
+/*
+	Takes a game state and a move
+	Returns a modified game state based on the provied move
+*/
+export const makeMove = (gameState: GameState, move: Move): GameState => {
+	let newBoard: (Piece | null)[] = [...gameState.boardState];
+	let newCastlingRights: CastlingRights = { ...gameState.castlingRights };
+	let newCurrentPlayer: Color;
+	let newEnPassantSquare: number | null = null;
+	let newHalfMoveClock: number = gameState.halfMoveClock;
+	let newFullMoves: number = gameState.fullMoves;
+
+	// Change the board state
+	let movedPiece = newBoard[move.fromSquare];
+	newBoard[move.fromSquare] = null;
+	newBoard[move.toSquare] = movedPiece;
+
+	// Check if move is pawn move or capture for the half move clock
+	let isPawnMoveOrCapture: boolean = false;
+	if (move.toSquare != null) {
+		isPawnMoveOrCapture = true;
+	}
 
 	// Check for castling
-	if (boardState[move.fromSquare]?.type == PieceType.King) {
+	if (gameState.boardState[move.fromSquare]?.type == PieceType.King) {
+		// Move the rook if castling
 		let rookMove: Move | undefined = isMoveCastling(move);
 		if (rookMove) {
-			let rook = tempBoardState[rookMove.fromSquare];
-			tempBoardState[rookMove.fromSquare] = null;
-			tempBoardState[rookMove.toSquare] = rook;
+			let rook = newBoard[rookMove.fromSquare];
+			newBoard[rookMove.fromSquare] = null;
+			newBoard[rookMove.toSquare] = rook;
+		}
+
+		// Remove castling rights if king has moved
+		if (gameState.currentPlayer == Color.White) {
+			newCastlingRights.whiteShort = false;
+			newCastlingRights.whiteLong = false;
+		} else {
+			newCastlingRights.blackShort = false;
+			newCastlingRights.blackLong = false;
 		}
 	}
 
-	return tempBoardState;
+	// Remove castling rights if rook moved
+	if (gameState.boardState[move.fromSquare]?.type == PieceType.Rook) {
+		if (gameState.currentPlayer == Color.White) {
+			if (move.fromSquare == 0) {
+				newCastlingRights.whiteLong = false;
+			} else if (move.fromSquare == 7) {
+				newCastlingRights.whiteShort = false;
+			}
+		} else {
+			if (move.fromSquare == 56) {
+				newCastlingRights.blackLong = false;
+			} else if (move.fromSquare == 63) {
+				newCastlingRights.blackShort = false;
+			}
+		}
+	}
+
+	// Remove castling rights if rook taken
+	if (gameState.boardState[move.toSquare]?.type == PieceType.Rook) {
+		if (gameState.boardState[move.toSquare]?.color == Color.White) {
+			if (move.toSquare == 0) {
+				newCastlingRights.whiteLong = false;
+			} else if (move.toSquare == 7) {
+				newCastlingRights.whiteShort = false;
+			}
+		} else {
+			if (move.toSquare == 56) {
+				newCastlingRights.blackLong = false;
+			} else if (move.toSquare == 63) {
+				newCastlingRights.blackShort = false;
+			}
+		}
+	}
+
+	// Change current player
+	if (gameState.currentPlayer == Color.White) {
+		newCurrentPlayer = Color.Black;
+	} else {
+		newCurrentPlayer = Color.White;
+		// If the move was black's increment the full move counter
+		newFullMoves++;
+	}
+
+	// Check for en passant opportunity (only if a pawn has moved twice this turn)
+	if (gameState.boardState[move.fromSquare]?.type == PieceType.Pawn) {
+		if (
+			Math.abs(
+				Math.floor(move.fromSquare / 8) - Math.floor(move.toSquare / 8)
+			) == 2
+		) {
+			newEnPassantSquare =
+				move.toSquare +
+				8 *
+					(gameState.boardState[move.fromSquare]?.color == Color.White
+						? -1
+						: 1);
+		}
+
+		isPawnMoveOrCapture = true;
+	}
+
+	// Increment the half move clock if the move wasnt pawn move or a capture
+	if (isPawnMoveOrCapture == false) newHalfMoveClock++;
+	else newHalfMoveClock = 0;
+
+	// Increment the full move counter after every black move
+
+	let newGameState: GameState = {
+		boardState: newBoard,
+		castlingRights: newCastlingRights,
+		currentPlayer: newCurrentPlayer,
+		enPassantSquare: newEnPassantSquare,
+		halfMoveClock: newHalfMoveClock,
+		fullMoves: newFullMoves,
+	};
+
+	return newGameState;
 };
 
 /* 
