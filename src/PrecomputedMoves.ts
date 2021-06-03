@@ -53,7 +53,7 @@ for (let squareIndex = 0; squareIndex < 64; squareIndex++) {
 				Math.abs(x - kingMoveSquareX),
 				Math.abs(y - kingMoveSquareY)
 			);
-			if (maxMoveDistance == 1) {
+			if (maxMoveDistance === 1) {
 				legalKingMoves.push(kingMoveSquare);
 			}
 		}
@@ -75,7 +75,7 @@ for (let squareIndex = 0; squareIndex < 64; squareIndex++) {
 				Math.abs(x - knightJumpSquareX),
 				Math.abs(y - knightJumpSquareY)
 			);
-			if (maxMoveDistance == 2) {
+			if (maxMoveDistance === 2) {
 				legalKnightJumps.push(knightJumpSquare);
 			}
 		}

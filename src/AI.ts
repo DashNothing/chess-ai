@@ -4,14 +4,7 @@ import {
 	evaluateMaterialAdvantage,
 	makeMove,
 } from "./GameLogic";
-import {
-	Piece,
-	PieceType,
-	Color,
-	Move,
-	CastlingRights,
-	GameState,
-} from "./interfaces";
+import { Move, GameState } from "./interfaces";
 
 export const getRandomMove = (gameState: GameState) => {
 	let legalMoves = generateLegalMoves(gameState);
@@ -27,7 +20,7 @@ export const getNegamaxMove = (gameState: GameState): Move | undefined => {
 	const negaMax = (gameState: GameState, depth: number): number => {
 		positionCounter++;
 
-		if (depth == 0) {
+		if (depth === 0) {
 			return evaluateMaterialAdvantage(
 				gameState.boardState,
 				gameState.currentPlayer
@@ -48,7 +41,7 @@ export const getNegamaxMove = (gameState: GameState): Move | undefined => {
 	let bestMoveScore: number = Number.POSITIVE_INFINITY;
 	let allLegalMoves: Move[] = generatePseudoLegalMoves(gameState);
 
-	if (allLegalMoves.length == 0) {
+	if (allLegalMoves.length === 0) {
 		console.log("Game over");
 		return;
 	}
@@ -70,7 +63,7 @@ export const getNegamaxMove = (gameState: GameState): Move | undefined => {
 
 	// Only keep the best moves
 	bestMovesWithScores = bestMovesWithScores.filter(
-		({ move, score }) => score == bestMoveScore
+		({ move, score }) => score === bestMoveScore
 	);
 
 	endTime = Date.now();
@@ -79,7 +72,7 @@ export const getNegamaxMove = (gameState: GameState): Move | undefined => {
 	console.log("Checking " + positionCounter + " moves");
 	console.log("That took " + timeDiff + "ms");
 
-	if (bestMovesWithScores.length == 0) return;
+	if (bestMovesWithScores.length === 0) return;
 
 	return bestMovesWithScores[
 		Math.floor(Math.random() * bestMovesWithScores.length)

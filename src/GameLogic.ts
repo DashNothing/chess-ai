@@ -25,7 +25,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 		(piece, index) => [piece, index]
 	);
 	pieces = pieces.filter(
-		([piece, index]) => piece?.color == gameState.currentPlayer
+		([piece, index]) => piece?.color === gameState.currentPlayer
 	);
 
 	// First 4 are orthogonal, last 4 are diagonals (N, S, W, E, NW, SE, NE, SW)
@@ -45,7 +45,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 
 						// Blocked by friendly piece, so stop looking in this direction
 						if (
-							gameState.boardState[targetSquare]?.color ==
+							gameState.boardState[targetSquare]?.color ===
 							gameState.currentPlayer
 						) {
 							break;
@@ -59,7 +59,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 						// Can caputure, so stop looking in this direction
 						if (
 							gameState.boardState[targetSquare] != null &&
-							gameState.boardState[targetSquare]?.color !=
+							gameState.boardState[targetSquare]?.color !==
 								gameState.currentPlayer
 						) {
 							break;
@@ -81,7 +81,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 
 						// Blocked by friendly piece, so stop looking in this direction
 						if (
-							gameState.boardState[targetSquare]?.color ==
+							gameState.boardState[targetSquare]?.color ===
 							gameState.currentPlayer
 						) {
 							break;
@@ -95,7 +95,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 						// Can caputure, so stop looking in this direction
 						if (
 							gameState.boardState[targetSquare] != null &&
-							gameState.boardState[targetSquare]?.color !=
+							gameState.boardState[targetSquare]?.color !==
 								gameState.currentPlayer
 						) {
 							break;
@@ -117,7 +117,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 
 						// Blocked by friendly piece, so stop looking in this direction
 						if (
-							gameState.boardState[targetSquare]?.color ==
+							gameState.boardState[targetSquare]?.color ===
 							gameState.currentPlayer
 						) {
 							break;
@@ -131,7 +131,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 						// Can caputure, so stop looking in this direction
 						if (
 							gameState.boardState[targetSquare] != null &&
-							gameState.boardState[targetSquare]?.color !=
+							gameState.boardState[targetSquare]?.color !==
 								gameState.currentPlayer
 						) {
 							break;
@@ -148,7 +148,8 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 				// Filter out the moves that land on friendly pieces
 				allKnightMoves.forEach((targetSquare) => {
 					if (
-						gameState.boardState[targetSquare]?.color != gameState.currentPlayer
+						gameState.boardState[targetSquare]?.color !==
+						gameState.currentPlayer
 					) {
 						pseudoLegalMoves.push({
 							fromSquare: squareIndex,
@@ -167,7 +168,8 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 				// Filter out the moves that land on friendly pieces
 				allKingMoves.forEach((targetSquare) => {
 					if (
-						gameState.boardState[targetSquare]?.color != gameState.currentPlayer
+						gameState.boardState[targetSquare]?.color !==
+						gameState.currentPlayer
 					) {
 						pseudoLegalMoves.push({
 							fromSquare: squareIndex,
@@ -178,12 +180,12 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 
 				// Castling
 				const canCastleShort =
-					gameState.currentPlayer == Color.White
+					gameState.currentPlayer === Color.White
 						? gameState.castlingRights.whiteShort
 						: gameState.castlingRights.blackShort;
 
 				const canCastleLong =
-					gameState.currentPlayer == Color.White
+					gameState.currentPlayer === Color.White
 						? gameState.castlingRights.whiteLong
 						: gameState.castlingRights.blackLong;
 
@@ -217,7 +219,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 			case PieceType.Pawn: {
 				// Single moves
 				let targetSquare =
-					piece.color == Color.White ? squareIndex + 8 : squareIndex - 8;
+					piece.color === Color.White ? squareIndex + 8 : squareIndex - 8;
 
 				if (targetSquare >= 0 && targetSquare < 64) {
 					if (gameState.boardState[targetSquare] == null)
@@ -229,10 +231,10 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 
 				// Double first move
 				let doubleMoveSquare =
-					piece.color == Color.White ? squareIndex + 16 : squareIndex - 16;
-				let startingRank = piece.color == Color.White ? 1 : 6;
+					piece.color === Color.White ? squareIndex + 16 : squareIndex - 16;
+				let startingRank = piece.color === Color.White ? 1 : 6;
 
-				if (Math.floor(squareIndex / 8) == startingRank) {
+				if (Math.floor(squareIndex / 8) === startingRank) {
 					if (
 						gameState.boardState[targetSquare] == null &&
 						gameState.boardState[doubleMoveSquare] == null
@@ -246,7 +248,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 
 				// Pawn captures
 				let pawnCaptures: number[] = [];
-				if (piece.color == Color.White) {
+				if (piece.color === Color.White) {
 					pawnCaptures = pawnCapturesWhite[squareIndex];
 				} else {
 					pawnCaptures = pawnCapturesBlack[squareIndex];
@@ -254,7 +256,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 
 				pawnCaptures.forEach((captureSquare) => {
 					if (
-						gameState.boardState[captureSquare]?.color !=
+						gameState.boardState[captureSquare]?.color !==
 							gameState.currentPlayer &&
 						gameState.boardState[captureSquare] != null
 					) {
@@ -291,14 +293,14 @@ export const generateLegalMoves = (gameState: GameState): Move[] => {
 		let myKingSquare = gameStateAfterMove.boardState.indexOf(
 			gameStateAfterMove.boardState.find(
 				(piece) =>
-					piece?.type == PieceType.King &&
-					piece?.color == gameState.currentPlayer
+					piece?.type === PieceType.King &&
+					piece?.color === gameState.currentPlayer
 			) || null
 		);
 
 		if (
 			opponentResponses.some(
-				(responseMove) => responseMove.toSquare == myKingSquare
+				(responseMove) => responseMove.toSquare === myKingSquare
 			)
 		) {
 		} else {
@@ -333,7 +335,7 @@ export const makeMove = (gameState: GameState, move: Move): GameState => {
 	}
 
 	// Check for castling
-	if (gameState.boardState[move.fromSquare]?.type == PieceType.King) {
+	if (gameState.boardState[move.fromSquare]?.type === PieceType.King) {
 		// Move the rook if castling
 		let rookMove: Move | undefined = isMoveCastling(move);
 		if (rookMove) {
@@ -343,7 +345,7 @@ export const makeMove = (gameState: GameState, move: Move): GameState => {
 		}
 
 		// Remove castling rights if king has moved
-		if (gameState.currentPlayer == Color.White) {
+		if (gameState.currentPlayer === Color.White) {
 			newCastlingRights.whiteShort = false;
 			newCastlingRights.whiteLong = false;
 		} else {
@@ -353,41 +355,41 @@ export const makeMove = (gameState: GameState, move: Move): GameState => {
 	}
 
 	// Remove castling rights if rook moved
-	if (gameState.boardState[move.fromSquare]?.type == PieceType.Rook) {
-		if (gameState.currentPlayer == Color.White) {
-			if (move.fromSquare == 0) {
+	if (gameState.boardState[move.fromSquare]?.type === PieceType.Rook) {
+		if (gameState.currentPlayer === Color.White) {
+			if (move.fromSquare === 0) {
 				newCastlingRights.whiteLong = false;
-			} else if (move.fromSquare == 7) {
+			} else if (move.fromSquare === 7) {
 				newCastlingRights.whiteShort = false;
 			}
 		} else {
-			if (move.fromSquare == 56) {
+			if (move.fromSquare === 56) {
 				newCastlingRights.blackLong = false;
-			} else if (move.fromSquare == 63) {
+			} else if (move.fromSquare === 63) {
 				newCastlingRights.blackShort = false;
 			}
 		}
 	}
 
 	// Remove castling rights if rook taken
-	if (gameState.boardState[move.toSquare]?.type == PieceType.Rook) {
-		if (gameState.boardState[move.toSquare]?.color == Color.White) {
-			if (move.toSquare == 0) {
+	if (gameState.boardState[move.toSquare]?.type === PieceType.Rook) {
+		if (gameState.boardState[move.toSquare]?.color === Color.White) {
+			if (move.toSquare === 0) {
 				newCastlingRights.whiteLong = false;
-			} else if (move.toSquare == 7) {
+			} else if (move.toSquare === 7) {
 				newCastlingRights.whiteShort = false;
 			}
 		} else {
-			if (move.toSquare == 56) {
+			if (move.toSquare === 56) {
 				newCastlingRights.blackLong = false;
-			} else if (move.toSquare == 63) {
+			} else if (move.toSquare === 63) {
 				newCastlingRights.blackShort = false;
 			}
 		}
 	}
 
 	// Change current player
-	if (gameState.currentPlayer == Color.White) {
+	if (gameState.currentPlayer === Color.White) {
 		newCurrentPlayer = Color.Black;
 	} else {
 		newCurrentPlayer = Color.White;
@@ -396,16 +398,16 @@ export const makeMove = (gameState: GameState, move: Move): GameState => {
 	}
 
 	// Check for en passant opportunity (only if a pawn has moved twice this turn)
-	if (gameState.boardState[move.fromSquare]?.type == PieceType.Pawn) {
+	if (gameState.boardState[move.fromSquare]?.type === PieceType.Pawn) {
 		if (
 			Math.abs(
 				Math.floor(move.fromSquare / 8) - Math.floor(move.toSquare / 8)
-			) == 2
+			) === 2
 		) {
 			newEnPassantSquare =
 				move.toSquare +
 				8 *
-					(gameState.boardState[move.fromSquare]?.color == Color.White
+					(gameState.boardState[move.fromSquare]?.color === Color.White
 						? -1
 						: 1);
 		}
@@ -414,7 +416,7 @@ export const makeMove = (gameState: GameState, move: Move): GameState => {
 	}
 
 	// Increment the half move clock if the move wasnt pawn move or a capture
-	if (isPawnMoveOrCapture == false) newHalfMoveClock++;
+	if (isPawnMoveOrCapture === false) newHalfMoveClock++;
 	else newHalfMoveClock = 0;
 
 	// Increment the full move counter after every black move
@@ -436,13 +438,13 @@ export const makeMove = (gameState: GameState, move: Move): GameState => {
   Returns the rook move for castling or undefined
 */
 export const isMoveCastling = (move: Move): Move | undefined => {
-	if (move.toSquare == move.fromSquare + 2)
+	if (move.toSquare === move.fromSquare + 2)
 		return {
 			fromSquare: move.toSquare + 1,
 			toSquare: move.toSquare - 1,
 		};
 
-	if (move.toSquare == move.fromSquare - 2)
+	if (move.toSquare === move.fromSquare - 2)
 		return {
 			fromSquare: move.toSquare - 2,
 			toSquare: move.toSquare + 1,
@@ -494,7 +496,7 @@ export const gameStateFromFEN = (fen: string): GameState => {
 	let rank = 7;
 
 	for (let symbol of fenBoard) {
-		if (symbol == "/") {
+		if (symbol === "/") {
 			file = 0;
 			rank--;
 		} else {
@@ -505,7 +507,7 @@ export const gameStateFromFEN = (fen: string): GameState => {
 			} else {
 				let piece: Piece = {
 					type: symbolToPiece(symbol),
-					color: symbol == symbol.toUpperCase() ? Color.White : Color.Black,
+					color: symbol === symbol.toUpperCase() ? Color.White : Color.Black,
 				};
 				newBoard[file + 8 * rank] = piece;
 				file++;
@@ -513,24 +515,24 @@ export const gameStateFromFEN = (fen: string): GameState => {
 		}
 	}
 
+	// Current player
+	let fenPlayer = fenArray[1];
+
+	if (fenPlayer === "w") newCurrentPlayer = Color.White;
+	else newCurrentPlayer = Color.Black;
+
 	// Castling rights
-	let fenCastling = fenArray[1];
+	let fenCastling = fenArray[2];
 
 	if (fenCastling.includes("K")) newCastlingRights.whiteShort = true;
 	if (fenCastling.includes("Q")) newCastlingRights.whiteLong = true;
 	if (fenCastling.includes("k")) newCastlingRights.blackShort = true;
 	if (fenCastling.includes("q")) newCastlingRights.blackLong = true;
 
-	// Current player
-	let fenPlayer = fenArray[2];
-
-	if (fenPlayer == "w") newCurrentPlayer = Color.White;
-	else newCurrentPlayer = Color.Black;
-
 	// En passant square
 	let fenPassant = fenArray[3];
 
-	if (fenPassant != "-") {
+	if (fenPassant !== "-") {
 		let fileString = fenPassant[0];
 		let rankString = fenPassant[1];
 
@@ -607,7 +609,7 @@ export const FENFromGameState = ({
 				break;
 		}
 
-		if (piece.color == Color.White) symbol = symbol.toUpperCase();
+		if (piece.color === Color.White) symbol = symbol.toUpperCase();
 
 		return symbol;
 	};
@@ -634,13 +636,13 @@ export const FENFromGameState = ({
 			fenString += emptySquares.toString();
 		}
 
-		if (rankIndex != 0) fenString += "/";
+		if (rankIndex !== 0) fenString += "/";
 	}
 
 	fenString += " ";
 
 	// Current player
-	fenString += currentPlayer == Color.White ? "w" : "b";
+	fenString += currentPlayer === Color.White ? "w" : "b";
 
 	fenString += " ";
 
@@ -650,7 +652,7 @@ export const FENFromGameState = ({
 	fenString += castlingRights.blackShort ? "k" : "";
 	fenString += castlingRights.blackLong ? "q" : "";
 
-	if (fenString[fenString.length - 1] == " ") {
+	if (fenString[fenString.length - 1] === " ") {
 		fenString += "-";
 	}
 
@@ -697,9 +699,9 @@ export const evaluateMaterialAdvantage = (
 	boardState.forEach((piece) => {
 		if (piece) {
 			materialAdvantage +=
-				piecePoints[piece.type] * (piece.color == Color.White ? 1 : -1);
+				piecePoints[piece.type] * (piece.color === Color.White ? 1 : -1);
 		}
 	});
 
-	return materialAdvantage * (side == Color.White ? 1 : -1);
+	return materialAdvantage * (side === Color.White ? 1 : -1);
 };

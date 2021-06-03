@@ -2,41 +2,22 @@
 /** @jsx jsx */
 import { jsx } from "@emotion/react";
 import styled from "@emotion/styled";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 import Board from "./components/Board";
 
-import {
-	Piece,
-	PieceType,
-	Color,
-	Move,
-	CastlingRights,
-	GameState,
-} from "./interfaces";
+import { Color, Move, GameState } from "./interfaces";
 import {
 	makeMove,
-	isMoveCastling,
 	gameStateFromFEN,
 	evaluateMaterialAdvantage,
 	FENFromGameState,
 } from "./GameLogic";
-import { getNegamaxMove, getRandomMove } from "./AI";
-
-let board: (Piece | null)[] = [];
-
-/* for (let file = 0; file < 8; file++) {
-	for (let rank = 0; rank < 8; rank++) {
-		board[file + 8 * rank] = null;
-	}
-} */
+import { getNegamaxMove } from "./AI";
 
 //const startingFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const startingFEN =
 	"rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2 ";
-
-console.log("Initial game state:");
-console.log(gameStateFromFEN(startingFEN));
 
 function App() {
 	const [gameState, setGameState] = useState<GameState>(
@@ -45,11 +26,17 @@ function App() {
 	const [lastMove, setLastMove] = useState<Move | null>(null);
 
 	useEffect(() => {
-		console.log(FENFromGameState(gameState));
-		console.log(gameState);
-		if (gameState.currentPlayer == Color.Black) {
+		const computerMakeMove = () => {
+			let computerMove = getNegamaxMove(gameState);
+			if (!computerMove) return;
+			callMakeMove(computerMove);
+		};
+
+		if (gameState.currentPlayer === Color.Black) {
 			computerMakeMove();
 		}
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [gameState]);
 
 	const callMakeMove = (move: Move) => {
@@ -58,14 +45,6 @@ function App() {
 
 		// Set new last move
 		setLastMove(move);
-	};
-
-	const computerMakeMove = () => {
-		let computerMove = getNegamaxMove(gameState);
-
-		if (!computerMove) return;
-
-		callMakeMove(computerMove);
 	};
 
 	return (
@@ -78,7 +57,7 @@ function App() {
 			<InfoSection>
 				<p>
 					Current player:{" "}
-					{gameState.currentPlayer == Color.White ? "white" : "black"}
+					{gameState.currentPlayer === Color.White ? "white" : "black"}
 				</p>
 				<p>
 					Material advantage:{" "}

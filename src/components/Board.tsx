@@ -1,19 +1,12 @@
 /** @jsxRuntime classic */
 /** @jsx jsx */
-import React, { useEffect, useState } from "react";
 import { jsx } from "@emotion/react";
+import React, { useState } from "react";
 import styled from "@emotion/styled";
 
-import {
-	Piece,
-	PieceType,
-	Color,
-	Move,
-	CastlingRights,
-	GameState,
-} from "../interfaces";
+import { Piece, PieceType, Color, Move, GameState } from "../interfaces";
 
-import { generatePseudoLegalMoves, generateLegalMoves } from "../GameLogic";
+import { generateLegalMoves } from "../GameLogic";
 
 type PropTypes = {
 	gameState: GameState;
@@ -32,7 +25,9 @@ const Board = ({ gameState, lastMove, onMakeMove }: PropTypes) => {
 				<Square
 					key={index}
 					isLight={
-						!(Math.floor(index / 8) % 2 != 0 ? index % 2 != 0 : index % 2 == 0)
+						!(Math.floor(index / 8) % 2 !== 0
+							? index % 2 !== 0
+							: index % 2 === 0)
 					}
 					row={8 - Math.floor(index / 8)}
 					image={getImageForPiece(piece)}
@@ -40,11 +35,11 @@ const Board = ({ gameState, lastMove, onMakeMove }: PropTypes) => {
 					onDrop={(e) => onDrop(e, index)}
 					isMarkedLegal={markedLegalMoveSquares.includes(index)}
 					isMarkedLastMove={
-						lastMove?.fromSquare == index || lastMove?.toSquare == index
+						lastMove?.fromSquare === index || lastMove?.toSquare === index
 					}
 				>
 					{piece ? (
-						piece.color == gameState.currentPlayer ? (
+						piece.color === gameState.currentPlayer ? (
 							<div
 								draggable
 								onDragStart={(e) =>
@@ -167,27 +162,27 @@ const getImageForPiece = (piece: Piece | null): string => {
 	if (piece == null) return "";
 	switch (piece.type) {
 		case PieceType.King: {
-			if (piece.color == Color.Black) return "king_b";
+			if (piece.color === Color.Black) return "king_b";
 			return "king_w";
 		}
 		case PieceType.Queen: {
-			if (piece.color == Color.Black) return "queen_b";
+			if (piece.color === Color.Black) return "queen_b";
 			return "queen_w";
 		}
 		case PieceType.Rook: {
-			if (piece.color == Color.Black) return "rook_b";
+			if (piece.color === Color.Black) return "rook_b";
 			return "rook_w";
 		}
 		case PieceType.Bishop: {
-			if (piece.color == Color.Black) return "bishop_b";
+			if (piece.color === Color.Black) return "bishop_b";
 			return "bishop_w";
 		}
 		case PieceType.Knight: {
-			if (piece.color == Color.Black) return "knight_b";
+			if (piece.color === Color.Black) return "knight_b";
 			return "knight_w";
 		}
 		case PieceType.Pawn: {
-			if (piece.color == Color.Black) return "pawn_b";
+			if (piece.color === Color.Black) return "pawn_b";
 			return "pawn_w";
 		}
 		default:
