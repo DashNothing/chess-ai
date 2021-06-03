@@ -1,6 +1,6 @@
 /** @jsxRuntime classic */
 /** @jsx jsx */
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { jsx } from "@emotion/react";
 import styled from "@emotion/styled";
 
@@ -12,6 +12,7 @@ type PropTypes = {
 	boardState: (Piece | null)[];
 	currentPlayer: Color;
 	castlingRights: CastlingRights;
+	lastMove: Move | null;
 	onMakeMove: (move: Move) => void;
 };
 
@@ -19,6 +20,7 @@ const Board = ({
 	boardState,
 	currentPlayer,
 	castlingRights,
+	lastMove,
 	onMakeMove,
 }: PropTypes) => {
 	const [markedLegalMoveSquares, setMarkedLegalMoveSquares] = useState<
@@ -36,7 +38,10 @@ const Board = ({
 				image={getImageForPiece(piece)}
 				onDragOver={(e) => onDragOver(e)}
 				onDrop={(e) => onDrop(e, index)}
-				isMarked={markedLegalMoveSquares.includes(index)}
+				isMarkedLegal={markedLegalMoveSquares.includes(index)}
+				isMarkedLastMove={
+					lastMove?.fromSquare == index || lastMove?.toSquare == index
+				}
 			>
 				{piece ? (
 					piece.color == currentPlayer ? (
@@ -63,7 +68,7 @@ const Board = ({
 		(e.currentTarget as HTMLElement).style.opacity = "0";
 		e.dataTransfer.setData("tilePosition", tilePos.toString());
 		let dragImage = new Image();
-		dragImage.src = `images/${piece}.svg`;
+		dragImage.src = `chess-ai/images/${piece}.svg`;
 
 		e.dataTransfer.setDragImage(dragImage, 45, 45);
 
@@ -115,7 +120,8 @@ const Chessboard = styled.div`
 type SquareProps = {
 	row: number;
 	isLight: boolean;
-	isMarked: boolean;
+	isMarkedLegal: boolean;
+	isMarkedLastMove: boolean;
 	image: string;
 };
 
@@ -132,19 +138,31 @@ const Square = styled.div<SquareProps>`
 	::after {
 		content: "";
 		position: absolute;
-		width: 20%;
-		height: 20%;
-		transform: rotate(45deg);
-		background-color: #5ca099;
-		opacity: ${(props) => (props.isMarked ? 1 : 0)};
+		width: 85%;
+		height: 85%;
+		border: 2px solid #5ca099;
+		opacity: ${(props) => (props.isMarkedLegal ? 1 : 0)};
 		pointer-events: none;
+		z-index: 2;
+	}
+
+	::before {
+		content: "";
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		background-color: #a8c8a6;
+		opacity: ${(props) => (props.isMarkedLastMove ? 0.9 : 0)};
+		pointer-events: none;
+		z-index: 0;
 	}
 
 	div {
 		width: 80%;
 		height: 80%;
-		background-image: ${(props) => `url("images/${props.image}.svg")`};
+		background-image: ${(props) => `url("chess-ai/images/${props.image}.svg")`};
 		background-size: cover;
+		z-index: 1;
 	}
 `;
 

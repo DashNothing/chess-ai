@@ -28,3 +28,12 @@ export interface CastlingRights {
 	blackShort: boolean;
 	blackLong: boolean;
 }
+
+export interface GameState {
+	boardState: (Piece | null)[];
+	currentPlayer: Color;
+	castlingRights: CastlingRights;
+	enPassantSquare: number | null;
+	halfMoveClock: number;
+	fullMoves: number;
+}

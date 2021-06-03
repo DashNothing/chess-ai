@@ -1,4 +1,11 @@
-import { Move, Piece, Color, PieceType, CastlingRights } from "./interfaces";
+import {
+	Move,
+	Piece,
+	Color,
+	PieceType,
+	CastlingRights,
+	GameState,
+} from "./interfaces";
 import {
 	numSquaresToEdge,
 	kingMoves,
@@ -341,10 +348,20 @@ export const isMoveCastling = (move: Move): Move | undefined => {
 };
 
 /*
-	Transfors a FEN string into an array of Pieces and nulls representing the board
+	Transfors a FEN string into the GameState object
 */
-export const positionFromFEN = (fen: string): (Piece | null)[] => {
+export const gameStateFromFEN = (fen: string): GameState => {
 	let newBoard: (Piece | null)[] = [];
+	let newCastlingRights: CastlingRights = {
+		whiteShort: false,
+		whiteLong: false,
+		blackShort: false,
+		blackLong: false,
+	};
+	let newCurrentPlayer: Color;
+	let newEnPassantSquare: number | null = null;
+	let newHalfMoveClock: number;
+	let newFullMoves: number;
 
 	const symbolToPiece = (symbol: string): PieceType => {
 		switch (symbol.toLowerCase()) {
@@ -365,7 +382,10 @@ export const positionFromFEN = (fen: string): (Piece | null)[] => {
 		}
 	};
 
-	const fenBoard: string = fen.split(" ")[0];
+	const fenArray: string[] = fen.split(" ");
+
+	// Board representation
+	let fenBoard = fenArray[0];
 	let file = 0;
 	let rank = 7;
 
@@ -389,7 +409,166 @@ export const positionFromFEN = (fen: string): (Piece | null)[] => {
 		}
 	}
 
-	return newBoard;
+	// Castling rights
+	let fenCastling = fenArray[1];
+
+	if (fenCastling.includes("K")) newCastlingRights.whiteShort = true;
+	if (fenCastling.includes("Q")) newCastlingRights.whiteLong = true;
+	if (fenCastling.includes("k")) newCastlingRights.blackShort = true;
+	if (fenCastling.includes("q")) newCastlingRights.blackLong = true;
+
+	// Current player
+	let fenPlayer = fenArray[2];
+
+	if (fenPlayer == "w") newCurrentPlayer = Color.White;
+	else newCurrentPlayer = Color.Black;
+
+	// En passant square
+	let fenPassant = fenArray[3];
+
+	if (fenPassant != "-") {
+		let fileString = fenPassant[0];
+		let rankString = fenPassant[1];
+
+		newEnPassantSquare =
+			fileString.charCodeAt(0) - 65 + parseInt(rankString) * 8;
+	}
+
+	// Half move clock
+	let fenHalfMove = fenArray[4];
+
+	newHalfMoveClock = parseInt(fenHalfMove);
+
+	// Full move clock
+	let fenFullMoves = fenArray[5];
+
+	newFullMoves = parseInt(fenFullMoves);
+
+	let newGameState: GameState = {
+		boardState: newBoard,
+		castlingRights: newCastlingRights,
+		currentPlayer: newCurrentPlayer,
+		enPassantSquare: newEnPassantSquare,
+		halfMoveClock: newHalfMoveClock,
+		fullMoves: newFullMoves,
+	};
+
+	return newGameState;
+};
+
+/*
+	Transforms the game state into a FEN string
+*/
+export const FENFromGameState = ({
+	boardState,
+	currentPlayer,
+	castlingRights,
+	enPassantSquare,
+	halfMoveClock,
+	fullMoves,
+}: GameState): string => {
+	let fenString: string = "";
+
+	const pieceToSymbol = (piece: Piece | null): string => {
+		let symbol: string = "";
+
+		if (piece == null) return symbol;
+
+		switch (piece.type) {
+			case PieceType.Pawn: {
+				symbol = "p";
+				break;
+			}
+			case PieceType.Rook: {
+				symbol = "r";
+				break;
+			}
+			case PieceType.Knight: {
+				symbol = "n";
+				break;
+			}
+			case PieceType.Bishop: {
+				symbol = "b";
+				break;
+			}
+			case PieceType.Queen: {
+				symbol = "q";
+				break;
+			}
+			case PieceType.King: {
+				symbol = "k";
+				break;
+			}
+			default:
+				break;
+		}
+
+		if (piece.color == Color.White) symbol = symbol.toUpperCase();
+
+		return symbol;
+	};
+
+	let file = 0;
+	let rank = 7;
+
+	// Board state
+	for (let rankIndex = rank; rankIndex >= 0; rankIndex--) {
+		let emptySquares = 0;
+		for (let fileIndex = file; fileIndex < 8; fileIndex++) {
+			if (boardState[fileIndex + 8 * rankIndex] == null) {
+				emptySquares++;
+			} else {
+				if (emptySquares > 0) {
+					fenString += emptySquares.toString();
+				}
+				fenString += pieceToSymbol(boardState[fileIndex + 8 * rankIndex]);
+				emptySquares = 0;
+			}
+		}
+
+		if (emptySquares > 0) {
+			fenString += emptySquares.toString();
+		}
+
+		if (rankIndex != 0) fenString += "/";
+	}
+
+	fenString += " ";
+
+	// Current player
+	fenString += currentPlayer == Color.White ? "w" : "b";
+
+	fenString += " ";
+
+	// Castling rights
+	fenString += castlingRights.whiteShort ? "K" : "";
+	fenString += castlingRights.whiteLong ? "Q" : "";
+	fenString += castlingRights.blackShort ? "k" : "";
+	fenString += castlingRights.blackLong ? "q" : "";
+
+	if (fenString[fenString.length - 1] == " ") {
+		fenString += "-";
+	}
+
+	fenString += " ";
+
+	// En passant square
+	if (enPassantSquare == null) fenString += "-";
+	else {
+		let enPassantRank = String.fromCharCode(
+			Math.floor(enPassantSquare / 8) + 65
+		);
+		let enPassantFile = enPassantSquare - Math.floor(enPassantSquare / 8);
+
+		fenString += enPassantRank + enPassantFile;
+	}
+
+	fenString += " ";
+
+	// Half moves since last capture or pawn move and full move counter
+	fenString += halfMoveClock + " " + fullMoves;
+
+	return fenString;
 };
 
 /*

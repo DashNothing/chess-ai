@@ -6,13 +6,23 @@ import React, { useState, useEffect } from "react";
 
 import Board from "./components/Board";
 
-import { Piece, PieceType, Color, Move, CastlingRights } from "./interfaces";
+import {
+	Piece,
+	PieceType,
+	Color,
+	Move,
+	CastlingRights,
+	GameState,
+} from "./interfaces";
 import {
 	isMoveCastling,
-	positionFromFEN,
+	gameStateFromFEN,
 	evaluateMaterialAdvantage,
+	FENFromGameState,
 } from "./GameLogic";
 import { getNegamaxMove, getRandomMove } from "./AI";
+
+import rookImg from "./images/rook_w.svg";
 
 let board: (Piece | null)[] = [];
 
@@ -22,34 +32,32 @@ let board: (Piece | null)[] = [];
 	}
 } */
 
-const startingFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-board = positionFromFEN(startingFEN);
+//const startingFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const startingFEN =
+	"rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2 ";
 
 function App() {
-	const [boardState, setBoardState] = useState(board);
-	const [currentPlayer, setCurrentPlayer] = useState(Color.White);
-	const [castlingRights, setCastlingRights] = useState<CastlingRights>({
-		whiteShort: true,
-		whiteLong: true,
-		blackShort: true,
-		blackLong: true,
-	});
+	const [gameState, setGameState] = useState<GameState>(
+		gameStateFromFEN(startingFEN)
+	);
+	const [lastMove, setLastMove] = useState<Move | null>(null);
 
 	useEffect(() => {
-		if (currentPlayer == Color.Black) {
+		console.log(FENFromGameState(gameState));
+		console.log(gameState);
+		if (gameState.currentPlayer == Color.Black) {
 			computerMakeMove();
 		}
-	}, [currentPlayer]);
+	}, [gameState]);
 
 	const makeMove = (move: Move) => {
-		let tempBoardState: (Piece | null)[] = [...boardState];
+		let tempBoardState: (Piece | null)[] = [...gameState.boardState];
 		let draggedPiece = tempBoardState[move.fromSquare];
 		tempBoardState[move.fromSquare] = null;
 		tempBoardState[move.toSquare] = draggedPiece;
 
 		// Check for castling
-		if (boardState[move.fromSquare]?.type == PieceType.King) {
+		if (gameState.boardState[move.fromSquare]?.type == PieceType.King) {
 			let rookMove: Move | undefined = isMoveCastling(move);
 			if (rookMove) {
 				let rook = tempBoardState[rookMove.fromSquare];
@@ -58,8 +66,8 @@ function App() {
 			}
 
 			// Remove castling rights if king has moved
-			let newCastlingRights = { ...castlingRights };
-			if (currentPlayer == Color.White) {
+			let newCastlingRights = { ...gameState.castlingRights };
+			if (gameState.currentPlayer == Color.White) {
 				newCastlingRights.whiteShort = false;
 				newCastlingRights.whiteLong = false;
 			} else {
@@ -67,13 +75,16 @@ function App() {
 				newCastlingRights.blackLong = false;
 			}
 
-			setCastlingRights(newCastlingRights);
+			setGameState((prevState) => ({
+				...prevState,
+				castlingRights: newCastlingRights,
+			}));
 		}
 
 		// Remove castling rights if rook moved
-		if (boardState[move.fromSquare]?.type == PieceType.Rook) {
-			let newCastlingRights = { ...castlingRights };
-			if (currentPlayer == Color.White) {
+		if (gameState.boardState[move.fromSquare]?.type == PieceType.Rook) {
+			let newCastlingRights = { ...gameState.castlingRights };
+			if (gameState.currentPlayer == Color.White) {
 				if (move.fromSquare == 0) {
 					newCastlingRights.whiteLong = false;
 				} else if (move.fromSquare == 7) {
@@ -87,13 +98,16 @@ function App() {
 				}
 			}
 
-			setCastlingRights(newCastlingRights);
+			setGameState((prevState) => ({
+				...prevState,
+				castlingRights: newCastlingRights,
+			}));
 		}
 
 		// Remove castling rights if rook taken
-		if (boardState[move.toSquare]?.type == PieceType.Rook) {
-			let newCastlingRights = { ...castlingRights };
-			if (boardState[move.toSquare]?.color == Color.White) {
+		if (gameState.boardState[move.toSquare]?.type == PieceType.Rook) {
+			let newCastlingRights = { ...gameState.castlingRights };
+			if (gameState.boardState[move.toSquare]?.color == Color.White) {
 				if (move.toSquare == 0) {
 					newCastlingRights.whiteLong = false;
 				} else if (move.toSquare == 7) {
@@ -107,18 +121,36 @@ function App() {
 				}
 			}
 
-			setCastlingRights(newCastlingRights);
+			setGameState((prevState) => ({
+				...prevState,
+				castlingRights: newCastlingRights,
+			}));
 		}
 
 		// Change current player
-		if (currentPlayer == Color.White) setCurrentPlayer(Color.Black);
-		else setCurrentPlayer(Color.White);
+		if (gameState.currentPlayer == Color.White)
+			setGameState((prevState) => ({
+				...prevState,
+				currentPlayer: Color.Black,
+			}));
+		else
+			setGameState((prevState) => ({
+				...prevState,
+				currentPlayer: Color.White,
+			}));
+
 		// Update board state
-		setBoardState(tempBoardState);
+		setGameState((prevState) => ({ ...prevState, boardState: tempBoardState }));
+
+		// Set new last move
+		setLastMove(move);
 	};
 
 	const computerMakeMove = () => {
-		let computerMove = getNegamaxMove(boardState, castlingRights);
+		let computerMove = getNegamaxMove(
+			gameState.boardState,
+			gameState.castlingRights
+		);
 
 		if (!computerMove) return;
 
@@ -128,19 +160,29 @@ function App() {
 	return (
 		<main>
 			<Board
-				boardState={boardState}
-				currentPlayer={currentPlayer}
-				castlingRights={castlingRights}
+				boardState={gameState.boardState}
+				currentPlayer={gameState.currentPlayer}
+				castlingRights={gameState.castlingRights}
+				lastMove={lastMove}
 				onMakeMove={makeMove}
 			/>
 			<InfoSection>
 				<p>
-					Current player: {currentPlayer == Color.White ? "white" : "black"}
+					Current player:{" "}
+					{gameState.currentPlayer == Color.White ? "white" : "black"}
 				</p>
 				<p>
 					Material advantage:{" "}
-					{evaluateMaterialAdvantage(boardState, Color.White)}
+					{evaluateMaterialAdvantage(gameState.boardState, Color.White)}
 				</p>
+				<img src={rookImg} />
+				<div
+					style={{
+						backgroundImage: "url(images/rook_w.svg)",
+						width: "100px",
+						height: "100px",
+					}}
+				></div>
 			</InfoSection>
 		</main>
 	);
