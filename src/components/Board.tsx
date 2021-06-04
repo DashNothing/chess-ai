@@ -152,7 +152,8 @@ const Square = styled.div<SquareProps>`
 	div {
 		width: 80%;
 		height: 80%;
-		background-image: ${(props) => `url("chess-ai/images/${props.image}.svg")`};
+		background-image: ${(props) =>
+			`url("${process.env.PUBLIC_URL}/images/${props.image}.svg")`};
 		background-size: cover;
 		z-index: 1;
 	}
