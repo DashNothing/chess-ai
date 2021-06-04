@@ -330,7 +330,7 @@ export const makeMove = (gameState: GameState, move: Move): GameState => {
 
 	// Check if move is pawn move or capture for the half move clock
 	let isPawnMoveOrCapture: boolean = false;
-	if (move.toSquare != null) {
+	if (gameState.boardState[move.toSquare] != null) {
 		isPawnMoveOrCapture = true;
 	}
 
@@ -418,8 +418,6 @@ export const makeMove = (gameState: GameState, move: Move): GameState => {
 	// Increment the half move clock if the move wasnt pawn move or a capture
 	if (isPawnMoveOrCapture === false) newHalfMoveClock++;
 	else newHalfMoveClock = 0;
-
-	// Increment the full move counter after every black move
 
 	let newGameState: GameState = {
 		boardState: newBoard,
@@ -661,12 +659,12 @@ export const FENFromGameState = ({
 	// En passant square
 	if (enPassantSquare == null) fenString += "-";
 	else {
-		let enPassantRank = String.fromCharCode(
-			Math.floor(enPassantSquare / 8) + 65
+		let enPassantFile = String.fromCharCode(
+			enPassantSquare - Math.floor(enPassantSquare / 8) * 8 + 65
 		);
-		let enPassantFile = enPassantSquare - Math.floor(enPassantSquare / 8);
+		let enPassantRank = Math.floor(enPassantSquare / 8) + 1;
 
-		fenString += enPassantRank + enPassantFile;
+		fenString += enPassantFile + enPassantRank;
 	}
 
 	fenString += " ";

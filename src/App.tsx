@@ -5,6 +5,7 @@ import styled from "@emotion/styled";
 import { useState, useEffect } from "react";
 
 import Board from "./components/Board";
+import GameInfo from "./components/GameInfo";
 
 import { Color, Move, GameState } from "./interfaces";
 import {
@@ -48,35 +49,21 @@ function App() {
 	};
 
 	return (
-		<main>
+		<Wrapper>
+			<GameInfo gameState={gameState} />
 			<Board
 				gameState={gameState}
 				lastMove={lastMove}
 				onMakeMove={callMakeMove}
 			/>
-			<InfoSection>
-				<p>
-					Current player:{" "}
-					{gameState.currentPlayer === Color.White ? "white" : "black"}
-				</p>
-				<p>
-					Material advantage:{" "}
-					{evaluateMaterialAdvantage(gameState.boardState, Color.White)}
-				</p>
-				<div
-					style={{
-						backgroundImage: "url(images/rook_w.svg)",
-						width: "100px",
-						height: "100px",
-					}}
-				></div>
-			</InfoSection>
-		</main>
+		</Wrapper>
 	);
 }
 
-const InfoSection = styled.div`
-	padding: 50px;
+const Wrapper = styled.main`
+	display: grid;
+	grid-template-columns: 1fr 3fr 1fr;
+	padding: 40px;
 `;
 
 export default App;
