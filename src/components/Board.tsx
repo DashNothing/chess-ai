@@ -64,7 +64,7 @@ const Board = ({ gameState, lastMove, onMakeMove }: PropTypes) => {
 		(e.currentTarget as HTMLElement).style.opacity = "0";
 		e.dataTransfer.setData("tilePosition", tilePos.toString());
 		let dragImage = new Image();
-		dragImage.src = `chess-ai/images/${piece}.svg`;
+		dragImage.src = `${process.env.PUBLIC_URL}/images/${piece}.svg`;
 
 		e.dataTransfer.setDragImage(dragImage, 45, 45);
 
