@@ -14,7 +14,9 @@ export const getRandomMove = (gameState: GameState) => {
 	return randomMove;
 };
 
-export const getNegamaxMove = (gameState: GameState): Move | undefined => {
+export const getNegamaxMove = async (
+	gameState: GameState
+): Promise<Move | undefined> => {
 	let positionCounter: number = 0;
 
 	const negaMax = (gameState: GameState, depth: number): number => {
@@ -28,7 +30,7 @@ export const getNegamaxMove = (gameState: GameState): Move | undefined => {
 		}
 
 		let max = Number.NEGATIVE_INFINITY;
-		let movesToEvaluate = generatePseudoLegalMoves(gameState);
+		let movesToEvaluate = generateLegalMoves(gameState);
 		movesToEvaluate.forEach((move) => {
 			let score = -negaMax(makeMove(gameState, move), depth - 1);
 			if (score > max) max = score;
@@ -39,7 +41,7 @@ export const getNegamaxMove = (gameState: GameState): Move | undefined => {
 
 	let bestMovesWithScores: { move: Move; score: number }[] = [];
 	let bestMoveScore: number = Number.POSITIVE_INFINITY;
-	let allLegalMoves: Move[] = generatePseudoLegalMoves(gameState);
+	let allLegalMoves: Move[] = generateLegalMoves(gameState);
 
 	if (allLegalMoves.length === 0) {
 		console.log("Game over");

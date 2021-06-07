@@ -318,7 +318,7 @@ export const generateLegalMoves = (gameState: GameState): Move[] => {
 export const makeMove = (gameState: GameState, move: Move): GameState => {
 	let newBoard: (Piece | null)[] = [...gameState.boardState];
 	let newCastlingRights: CastlingRights = { ...gameState.castlingRights };
-	let newCurrentPlayer: Color;
+	let newCurrentPlayer: Color = gameState.currentPlayer;
 	let newEnPassantSquare: number | null = null;
 	let newHalfMoveClock: number = gameState.halfMoveClock;
 	let newFullMoves: number = gameState.fullMoves;
@@ -388,10 +388,21 @@ export const makeMove = (gameState: GameState, move: Move): GameState => {
 		}
 	}
 
-	// Change current player
-	if (gameState.currentPlayer === Color.White) {
-		newCurrentPlayer = Color.Black;
-	} else {
+	// Change current player, but only if a pawn hasn't moved to a promotion square
+	if (!isMovePromotion(move, gameState.boardState)) {
+		if (gameState.currentPlayer === Color.White) {
+			newCurrentPlayer = Color.Black;
+		} else {
+			newCurrentPlayer = Color.White;
+			// If the move was black's increment the full move counter
+			newFullMoves++;
+		}
+	} else if (gameState.currentPlayer == Color.Black) {
+		newBoard = promotePawn(
+			{ ...gameState, boardState: newBoard },
+			move.toSquare,
+			PieceType.Queen
+		).boardState;
 		newCurrentPlayer = Color.White;
 		// If the move was black's increment the full move counter
 		newFullMoves++;
@@ -449,6 +460,72 @@ export const isMoveCastling = (move: Move): Move | undefined => {
 		};
 
 	return undefined;
+};
+
+/*
+	Check if the move is a promotion and returns a boolean
+*/
+export const isMovePromotion = (
+	move: Move,
+	boardState: (Piece | null)[]
+): boolean => {
+	if (boardState[move.fromSquare]?.type == PieceType.Pawn) {
+		// If white pawn is on the 8th rank
+		if (
+			boardState[move.fromSquare]?.color == Color.White &&
+			Math.floor(move.toSquare / 8) == 7
+		) {
+			return true;
+		}
+		// If black pawn is on the 1st rank
+		if (
+			boardState[move.fromSquare]?.color == Color.Black &&
+			Math.floor(move.toSquare / 8) == 0
+		) {
+			return true;
+		}
+	}
+
+	return false;
+};
+
+/*
+	Promotes a pawn and advances the turn to the next player
+*/
+export const promotePawn = (
+	gameState: GameState,
+	pawnSquare: number,
+	promoteTo: PieceType
+): GameState => {
+	let newBoard: (Piece | null)[] = [...gameState.boardState];
+	let newCurrentPlayer: Color = gameState.currentPlayer;
+	let newFullMoves: number = gameState.fullMoves;
+
+	// Update the board state
+	if (newBoard[pawnSquare] != null) {
+		newBoard[pawnSquare] = {
+			color: newBoard[pawnSquare]!.color,
+			type: promoteTo,
+		};
+	}
+
+	// Change the current player
+	if (gameState.currentPlayer === Color.White) {
+		newCurrentPlayer = Color.Black;
+	} else {
+		newCurrentPlayer = Color.White;
+		// If the move was black's increment the full move counter
+		newFullMoves++;
+	}
+
+	const newGameState: GameState = {
+		...gameState,
+		boardState: newBoard,
+		currentPlayer: newCurrentPlayer,
+		fullMoves: newFullMoves,
+	};
+
+	return newGameState;
 };
 
 /*
@@ -677,7 +754,7 @@ export const FENFromGameState = ({
 
 /*
 	Evaluates material advantage of the board state
-	Positive value means white is winnin, negative means black is winning, zero is tied
+	Positive value means white is winning, negative means black is winning, zero is tied
 */
 export const evaluateMaterialAdvantage = (
 	boardState: (Piece | null)[],
