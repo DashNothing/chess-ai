@@ -20,7 +20,7 @@ const promotionFEN = "k7/7P/8/8/8/8/p7/7K w - - 2 20";
 
 function App() {
 	const [gameState, setGameState] = useState<GameState>(
-		gameStateFromFEN(startingFEN)
+		gameStateFromFEN(promotionFEN)
 	);
 	const [lastMove, setLastMove] = useState<Move | null>(null);
 	const [isPromotionModalShowing, setIsPromotionModalShowing] = useState(false);
