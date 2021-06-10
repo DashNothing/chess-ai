@@ -45,7 +45,7 @@ export const getNegamaxMove = async (
 
 	if (allLegalMoves.length === 0) {
 		console.log("Game over");
-		return;
+		return Promise.resolve(undefined);
 	}
 
 	let startTime: number, endTime: number;
@@ -74,9 +74,10 @@ export const getNegamaxMove = async (
 	console.log("Checking " + positionCounter + " moves");
 	console.log("That took " + timeDiff + "ms");
 
-	if (bestMovesWithScores.length === 0) return;
+	if (bestMovesWithScores.length === 0) return Promise.resolve(undefined);
 
-	return bestMovesWithScores[
-		Math.floor(Math.random() * bestMovesWithScores.length)
-	].move;
+	return Promise.resolve(
+		bestMovesWithScores[Math.floor(Math.random() * bestMovesWithScores.length)]
+			.move
+	);
 };

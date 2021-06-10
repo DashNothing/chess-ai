@@ -28,11 +28,12 @@ function App() {
 
 	useEffect(() => {
 		const computerMakeMove = async () => {
-			let computerMove = await getNegamaxMove(gameState);
-			if (!computerMove) return;
-			callMakeMove(computerMove);
+			getNegamaxMove(gameState).then((computerMove) => {
+				console.log("Negamax move : " + computerMove);
+				if (!computerMove) return;
+				callMakeMove(computerMove);
+			});
 		};
-
 		if (gameState.currentPlayer === Color.Black) {
 			computerMakeMove();
 		}
