@@ -1,15 +1,19 @@
 import { Move } from "./interfaces";
 
-// First 4 are orthogonal, last 4 are diagonals (N, S, W, E, NW, SE, NE, SW)
+// First 4 are orthogonal, last 4 are diagonal
 const directionOffsets = [8, -8, -1, 1, 7, -7, 9, -9];
+
+const allKnightJumps: number[] = [15, 17, -17, -15, 10, -6, 6, -10];
 
 let numSquaresToEdge: [number[]] = [[]];
 
-let rookMoves: Move[] = [];
-let kingMoves: [number[]] = [[]];
-let knightMoves: [number[]] = [[]];
-let pawnCapturesWhite: [number[]] = [[]];
-let pawnCapturesBlack: [number[]] = [[]];
+let rookMoves: number[][] = [];
+let bishopMoves: number[][] = [[]];
+let queenMoves: number[][] = [[]];
+let kingMoves: number[][] = [];
+let knightMoves: number[][] = [];
+let pawnCapturesWhite: number[][] = [[]];
+let pawnCapturesBlack: number[][] = [[]];
 
 for (let squareIndex = 0; squareIndex < 64; squareIndex++) {
 	let y: number = Math.floor(squareIndex / 8);
@@ -32,13 +36,37 @@ for (let squareIndex = 0; squareIndex < 64; squareIndex++) {
 	numSquaresToEdge[squareIndex][7] = Math.min(south, west);
 
 	// Rook moves
+	let legalRookMoves: number[] = [];
 	for (let directionIndex = 0; directionIndex < 4; directionIndex++) {
 		let currentDirOffset = directionOffsets[directionIndex];
 		for (let n = 0; n < numSquaresToEdge[squareIndex][directionIndex]; n++) {
 			let targetSquare = squareIndex + currentDirOffset * (n + 1);
-			rookMoves.push({ fromSquare: squareIndex, toSquare: targetSquare });
+			legalRookMoves.push(targetSquare);
 		}
 	}
+	rookMoves[squareIndex] = legalRookMoves;
+
+	// Bishop moves
+	let legalBishopMoves: number[] = [];
+	for (let directionIndex = 4; directionIndex < 8; directionIndex++) {
+		let currentDirOffset = directionOffsets[directionIndex];
+		for (let n = 0; n < numSquaresToEdge[squareIndex][directionIndex]; n++) {
+			let targetSquare = squareIndex + currentDirOffset * (n + 1);
+			legalBishopMoves.push(targetSquare);
+		}
+	}
+	bishopMoves[squareIndex] = legalBishopMoves;
+
+	// Queen moves
+	let legalQueenMoves: number[] = [];
+	for (let directionIndex = 0; directionIndex < 8; directionIndex++) {
+		let currentDirOffset = directionOffsets[directionIndex];
+		for (let n = 0; n < numSquaresToEdge[squareIndex][directionIndex]; n++) {
+			let targetSquare = squareIndex + currentDirOffset * (n + 1);
+			legalQueenMoves.push(targetSquare);
+		}
+	}
+	queenMoves[squareIndex] = legalQueenMoves;
 
 	// King moves
 	let legalKingMoves: number[] = [];
@@ -62,7 +90,6 @@ for (let squareIndex = 0; squareIndex < 64; squareIndex++) {
 	kingMoves[squareIndex] = legalKingMoves;
 
 	// Knight moves
-	const allKnightJumps: number[] = [15, 17, -17, -15, 10, -6, 6, -10];
 	let legalKnightJumps: number[] = [];
 	allKnightJumps.forEach((knightJumpDelta) => {
 		let knightJumpSquare = squareIndex + knightJumpDelta;
@@ -111,6 +138,8 @@ for (let squareIndex = 0; squareIndex < 64; squareIndex++) {
 export {
 	numSquaresToEdge,
 	rookMoves,
+	bishopMoves,
+	queenMoves,
 	kingMoves,
 	knightMoves,
 	pawnCapturesBlack,

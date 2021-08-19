@@ -13,6 +13,22 @@ import {
 	pawnCapturesWhite,
 	pawnCapturesBlack,
 } from "./PrecomputedMoves";
+import {
+	pawnPSTableB,
+	knightPSTableB,
+	bishopPSTableB,
+	rookPSTableB,
+	queenPSTableB,
+	kingPSTableB,
+	pawnPSTableW,
+	knightPSTableW,
+	bishopPSTableW,
+	rookPSTableW,
+	queenPSTableW,
+	kingPSTableW,
+} from "./PieceSquareTables";
+
+var attackMoves: { piece: Piece; squares: number[] }[] = [];
 
 /*
 	Generates moves without check detection
@@ -24,6 +40,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 	let pieces: [Piece | null, number][] = gameState.boardState.map(
 		(piece, index) => [piece, index]
 	);
+
 	pieces = pieces.filter(
 		([piece, index]) => piece?.color === gameState.currentPlayer
 	);
@@ -44,10 +61,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 						let targetSquare = squareIndex + currentDirOffset * (n + 1);
 
 						// Blocked by friendly piece, so stop looking in this direction
-						if (
-							gameState.boardState[targetSquare]?.color ===
-							gameState.currentPlayer
-						) {
+						if (gameState.boardState[targetSquare]?.color === piece?.color) {
 							break;
 						}
 
@@ -59,8 +73,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 						// Can caputure, so stop looking in this direction
 						if (
 							gameState.boardState[targetSquare] != null &&
-							gameState.boardState[targetSquare]?.color !==
-								gameState.currentPlayer
+							gameState.boardState[targetSquare]?.color !== piece?.color
 						) {
 							break;
 						}
@@ -80,10 +93,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 						let targetSquare = squareIndex + currentDirOffset * (n + 1);
 
 						// Blocked by friendly piece, so stop looking in this direction
-						if (
-							gameState.boardState[targetSquare]?.color ===
-							gameState.currentPlayer
-						) {
+						if (gameState.boardState[targetSquare]?.color === piece?.color) {
 							break;
 						}
 
@@ -95,8 +105,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 						// Can caputure, so stop looking in this direction
 						if (
 							gameState.boardState[targetSquare] != null &&
-							gameState.boardState[targetSquare]?.color !==
-								gameState.currentPlayer
+							gameState.boardState[targetSquare]?.color !== piece?.color
 						) {
 							break;
 						}
@@ -163,14 +172,20 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 
 			case PieceType.King: {
 				// Find all king moves from the piece's square
-				let allKingMoves = kingMoves[squareIndex];
+				let allKingMoves = [...kingMoves[squareIndex]];
+
+				// Don't add moves that are under attack
+				const attackedSquares = getAttackedSquares(gameState);
+				for (let attackedSquare of attackedSquares) {
+					for (let kingMove of allKingMoves)
+						if (kingMove === attackedSquare) {
+							allKingMoves.splice(allKingMoves.indexOf(kingMove), 1);
+						}
+				}
 
 				// Filter out the moves that land on friendly pieces
 				allKingMoves.forEach((targetSquare) => {
-					if (
-						gameState.boardState[targetSquare]?.color !==
-						gameState.currentPlayer
-					) {
+					if (gameState.boardState[targetSquare]?.color !== piece?.color) {
 						pseudoLegalMoves.push({
 							fromSquare: squareIndex,
 							toSquare: targetSquare,
@@ -192,7 +207,9 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 				if (canCastleShort) {
 					if (
 						gameState.boardState[squareIndex + 1] == null &&
-						gameState.boardState[squareIndex + 2] == null
+						gameState.boardState[squareIndex + 2] == null &&
+						!attackedSquares.includes(squareIndex + 1) &&
+						!attackedSquares.includes(squareIndex + 2)
 					) {
 						pseudoLegalMoves.push({
 							fromSquare: squareIndex,
@@ -204,7 +221,9 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 				if (canCastleLong) {
 					if (
 						gameState.boardState[squareIndex - 1] == null &&
-						gameState.boardState[squareIndex - 2] == null
+						gameState.boardState[squareIndex - 2] == null &&
+						!attackedSquares.includes(squareIndex - 1) &&
+						!attackedSquares.includes(squareIndex - 2)
 					) {
 						pseudoLegalMoves.push({
 							fromSquare: squareIndex,
@@ -282,7 +301,7 @@ export const generatePseudoLegalMoves = (gameState: GameState): Move[] => {
 	Generates the moves with check detecion by generating pseudo legal moves and removing illegal moves
 	Returns a list of all legal moves
 */
-export const generateLegalMoves = (gameState: GameState): Move[] => {
+export const generateLegalMovesSlow = (gameState: GameState): Move[] => {
 	let legalMoves: Move[] = [];
 	let pseudoLegalMoves: Move[] = generatePseudoLegalMoves(gameState);
 
@@ -309,6 +328,379 @@ export const generateLegalMoves = (gameState: GameState): Move[] => {
 	});
 
 	return legalMoves;
+};
+
+/*
+	Generates legal moves in an optimized way, using lists of attacked squares
+	Returns a list of all legal moves
+*/
+export const generateLegalMoves = (gameState: GameState): Move[] => {
+	let pseudoLegalMoves: Move[] = generatePseudoLegalMoves(gameState);
+	let legalMoves: Move[] = [];
+
+	const kingAttacks = getKingAttacks(gameState);
+
+	// If king is in check
+	if (kingAttacks.length > 0) {
+		if (kingAttacks.length == 1) {
+			// Single check, can do only 3 things:
+			// 1. move the king out of the check
+			const movesWithKing = pseudoLegalMoves.filter(
+				(move) => gameState.boardState[move.fromSquare]?.type === PieceType.King
+			);
+			// 2. capture the checking piece
+			const captures = pseudoLegalMoves.filter(
+				(move) => move.toSquare === gameState.boardState.indexOf(kingAttacks[0])
+			);
+			// 3. block the check if the checking piece is queen, rook or bishop
+			if (isSlidingPiece(kingAttacks[0].type)) {
+				// Get the attacking piece's attack ray toward the king
+				const attackRay: number[] = getAttackRayToKing(
+					kingAttacks[0],
+					gameState
+				);
+				// Get the moves that end in the attack ray squares
+				const blocks = pseudoLegalMoves.filter((move) =>
+					attackRay.includes(move.toSquare)
+				);
+				legalMoves.push(...blocks);
+			}
+
+			legalMoves.push(...movesWithKing);
+			legalMoves.push(...captures);
+		} else {
+			// Double check
+			// Only king moves are allowed
+			legalMoves = pseudoLegalMoves.filter(
+				(move) => gameState.boardState[move.fromSquare]?.type === PieceType.King
+			);
+		}
+	} else {
+		// If king is not in check we need to find pinned pieces and remove
+		// any moves that move outside of the line between the attacker and the king
+		legalMoves = pseudoLegalMoves;
+
+		// Only sliding pieces can pin other pieces
+		const opponentSlidingPieces = gameState.boardState.filter(
+			(piece) =>
+				piece &&
+				piece.color !== gameState.currentPlayer &&
+				isSlidingPiece(piece.type)
+		);
+
+		// Get all the attack rays from opponent sliding pieces to the king
+		const attackRays: { attackerSquare: number; ray: number[] }[] =
+			opponentSlidingPieces.map((piece) => {
+				return {
+					attackerSquare: gameState.boardState.indexOf(piece),
+					ray: getAttackRayToKing(piece!, gameState),
+				};
+			});
+
+		// If any attack ray goes through only one friendly piece and the king,
+		// that piece can only move inside the ray
+		for (const attackRay of attackRays) {
+			let friendlyPiecesInRay = 0;
+			let pinnedPieceSquare: number;
+			attackRay.ray.forEach((square) => {
+				if (gameState.boardState[square]?.color === gameState.currentPlayer) {
+					friendlyPiecesInRay++;
+					// If first piece in the ray it's the pinned piece
+					if (friendlyPiecesInRay == 1) {
+						pinnedPieceSquare = square;
+					}
+				}
+			});
+
+			if (friendlyPiecesInRay == 2) {
+				const pinnedPieceMoves = legalMoves.filter(
+					(move) => move.fromSquare == pinnedPieceSquare
+				);
+
+				const illegalPinnedPieceMoves = pinnedPieceMoves.filter(
+					(move) =>
+						!attackRay.ray.includes(move.toSquare) &&
+						move.toSquare !== attackRay.attackerSquare
+				);
+
+				illegalPinnedPieceMoves.forEach((illegalMove) => {
+					legalMoves.splice(legalMoves.indexOf(illegalMove), 1);
+				});
+			}
+		}
+	}
+
+	return legalMoves;
+};
+
+/*
+	Returns the indeces of squares that the opposing player is attacking
+*/
+const getAttackedSquares = (gameState: GameState): number[] => {
+	var attackedSquares: number[] = [];
+
+	const opponentColor =
+		gameState.currentPlayer === Color.White ? Color.Black : Color.White;
+
+	const opponentPieces: Piece[] = gameState.boardState
+		.filter((piece) => piece != null && piece?.color === opponentColor)
+		.map((piece) => piece!);
+
+	// For every opponent piece get all the squares they attack
+	opponentPieces.forEach((opponentPiece) => {
+		attackedSquares.push(
+			...getPieceAttackingSquares(
+				gameState,
+				opponentPiece,
+				gameState.boardState.indexOf(opponentPiece)
+			)
+		);
+	});
+
+	return attackedSquares;
+};
+
+/*
+	Takes a piece
+	Returns a list of all indeces attacked by the piece
+*/
+const getPieceAttackingSquares = (
+	gameState: GameState,
+	piece: Piece,
+	squareIndex: number
+): number[] => {
+	let attackedSquares: number[] = [];
+
+	// First 4 are orthogonal, last 4 are diagonals (N, S, W, E, NW, SE, NE, SW)
+	const directionOffsets = [8, -8, -1, 1, 7, -7, 9, -9];
+
+	switch (piece?.type) {
+		case PieceType.Rook: {
+			for (let directionIndex = 0; directionIndex < 4; directionIndex++) {
+				let currentDirOffset = directionOffsets[directionIndex];
+				for (
+					let n = 0;
+					n < numSquaresToEdge[squareIndex][directionIndex];
+					n++
+				) {
+					let targetSquare = squareIndex + currentDirOffset * (n + 1);
+
+					attackedSquares.push(targetSquare);
+
+					// Blocked by friendly piece, so stop looking in this direction
+					if (gameState.boardState[targetSquare]?.color === piece?.color) {
+						break;
+					}
+
+					// Can caputure, so stop looking in this direction
+					// If it's a king, don't stop
+					if (
+						gameState.boardState[targetSquare] != null &&
+						gameState.boardState[targetSquare]?.color !== piece?.color &&
+						gameState.boardState[targetSquare]?.type !== PieceType.King
+					) {
+						break;
+					}
+				}
+			}
+			break;
+		}
+
+		case PieceType.Bishop: {
+			for (let directionIndex = 4; directionIndex < 8; directionIndex++) {
+				let currentDirOffset = directionOffsets[directionIndex];
+				for (
+					let n = 0;
+					n < numSquaresToEdge[squareIndex][directionIndex];
+					n++
+				) {
+					let targetSquare = squareIndex + currentDirOffset * (n + 1);
+
+					attackedSquares.push(targetSquare);
+
+					// Blocked by friendly piece, so stop looking in this direction
+					if (gameState.boardState[targetSquare]?.color === piece?.color) {
+						break;
+					}
+
+					// Can caputure, so stop looking in this direction
+					// If it's a king, don't stop
+					if (
+						gameState.boardState[targetSquare] != null &&
+						gameState.boardState[targetSquare]?.color !== piece?.color &&
+						gameState.boardState[targetSquare]?.type !== PieceType.King
+					) {
+						break;
+					}
+				}
+			}
+			break;
+		}
+
+		case PieceType.Queen: {
+			for (let directionIndex = 0; directionIndex < 8; directionIndex++) {
+				let currentDirOffset = directionOffsets[directionIndex];
+				for (
+					let n = 0;
+					n < numSquaresToEdge[squareIndex][directionIndex];
+					n++
+				) {
+					let targetSquare = squareIndex + currentDirOffset * (n + 1);
+
+					attackedSquares.push(targetSquare);
+
+					// Blocked by friendly piece, so stop looking in this direction
+					if (gameState.boardState[targetSquare]?.color === piece?.color) {
+						break;
+					}
+
+					// Can caputure, so stop looking in this direction
+					// If it's a king, don't stop
+					if (
+						gameState.boardState[targetSquare] != null &&
+						gameState.boardState[targetSquare]?.color !== piece?.color &&
+						gameState.boardState[targetSquare]?.type !== PieceType.King
+					) {
+						break;
+					}
+				}
+			}
+			break;
+		}
+
+		case PieceType.Knight: {
+			// Find all knight moves from the piece's square
+			let allKnightMoves = knightMoves[squareIndex];
+
+			// Filter out the moves that land on friendly pieces
+			allKnightMoves.forEach((targetSquare) => {
+				attackedSquares.push(targetSquare);
+			});
+
+			break;
+		}
+
+		case PieceType.Pawn: {
+			// Pawn captures
+			let pawnCaptures: number[] = [];
+			if (piece.color === Color.White) {
+				pawnCaptures = pawnCapturesWhite[squareIndex];
+			} else {
+				pawnCaptures = pawnCapturesBlack[squareIndex];
+			}
+
+			pawnCaptures.forEach((captureSquare) => {
+				attackedSquares.push(captureSquare);
+			});
+
+			break;
+		}
+
+		case PieceType.King: {
+			// Find all king moves from the piece's square
+			let allKingMoves = [...kingMoves[squareIndex]];
+
+			// Filter out the moves that land on friendly pieces
+			allKingMoves.forEach((targetSquare) => {
+				attackedSquares.push(targetSquare);
+			});
+
+			break;
+		}
+
+		default:
+			break;
+	}
+
+	return attackedSquares;
+};
+
+/*
+	Returns a list of all pieces attacking the current player's king
+*/
+export const getKingAttacks = (gameState: GameState): Piece[] => {
+	let kingAttacks: Piece[] = [];
+
+	const myKingSquare = gameState.boardState.indexOf(
+		gameState.boardState.find(
+			(piece) =>
+				piece?.type == PieceType.King && piece?.color == gameState.currentPlayer
+		)!
+	);
+
+	const opponentColor =
+		gameState.currentPlayer === Color.White ? Color.Black : Color.White;
+
+	const opponentPieces: Piece[] = gameState.boardState
+		.filter((piece) => piece != null && piece?.color === opponentColor)
+		.map((piece) => piece!);
+
+	for (let opponentPiece of opponentPieces) {
+		const attackedSquares = getPieceAttackingSquares(
+			gameState,
+			opponentPiece,
+			gameState.boardState.indexOf(opponentPiece)
+		);
+
+		for (let square of attackedSquares) {
+			if (square === myKingSquare) {
+				kingAttacks.push(opponentPiece!);
+			}
+		}
+	}
+
+	return kingAttacks;
+};
+
+/*
+	Returns a list of all attacked squares in a ray toward the current player's king
+*/
+const getAttackRayToKing = (piece: Piece, gameState: GameState): number[] => {
+	let attackRay: number[] = [];
+
+	const squareIndex = gameState.boardState.indexOf(piece);
+
+	// First 4 are orthogonal, last 4 are diagonals (N, S, W, E, NW, SE, NE, SW)
+	const directionOffsets = [8, -8, -1, 1, 7, -7, 9, -9];
+	const startDir = piece.type === PieceType.Bishop ? 4 : 0;
+	const endDir = piece.type === PieceType.Rook ? 4 : 8;
+
+	// Check every direction and save the attack ray where the current player's king is found
+	for (
+		let directionIndex = startDir;
+		directionIndex < endDir;
+		directionIndex++
+	) {
+		let currentDirOffset = directionOffsets[directionIndex];
+		let foundKing = false;
+		let tempRaySquares = [];
+		for (let n = 0; n < numSquaresToEdge[squareIndex][directionIndex]; n++) {
+			let targetSquare = squareIndex + currentDirOffset * (n + 1);
+
+			// Blocked by friendly piece, so stop looking in this direction
+			if (gameState.boardState[targetSquare]?.color === piece?.color) {
+				break;
+			}
+
+			tempRaySquares.push(targetSquare);
+
+			// If it's a king this is the right ray
+			if (
+				gameState.boardState[targetSquare] != null &&
+				gameState.boardState[targetSquare]?.color !== piece?.color &&
+				gameState.boardState[targetSquare]?.type === PieceType.King
+			) {
+				foundKing = true;
+				break;
+			}
+		}
+		if (foundKing) {
+			attackRay = [...tempRaySquares];
+			break;
+		}
+	}
+
+	return attackRay;
 };
 
 /*
@@ -487,6 +879,17 @@ export const isMovePromotion = (
 	}
 
 	return false;
+};
+
+/*
+	Check if the piece is a rook, bishop or queen
+*/
+const isSlidingPiece = (piece: PieceType): boolean => {
+	return (
+		piece === PieceType.Bishop ||
+		piece === PieceType.Rook ||
+		piece === PieceType.Queen
+	);
 };
 
 /*
@@ -754,29 +1157,117 @@ export const FENFromGameState = ({
 
 /*
 	Evaluates material advantage of the board state
-	Positive value means white is winning, negative means black is winning, zero is tied
+	Positive value means passed color is winning, ngative means the opponent is winning, zero is tied
 */
 export const evaluateMaterialAdvantage = (
 	boardState: (Piece | null)[],
 	side: Color
 ): number => {
-	let materialAdvantage = 0;
-
 	const piecePoints = {
-		[PieceType.Pawn]: 1,
-		[PieceType.Bishop]: 3,
-		[PieceType.Knight]: 3,
-		[PieceType.Rook]: 5,
-		[PieceType.Queen]: 9,
-		[PieceType.King]: 900,
+		[PieceType.Pawn]: 100,
+		[PieceType.Bishop]: 330,
+		[PieceType.Knight]: 320,
+		[PieceType.Rook]: 500,
+		[PieceType.Queen]: 900,
+		[PieceType.King]: 20000,
 	};
+	let myScore = 0;
+	let opponentScore = 0;
 
-	boardState.forEach((piece) => {
-		if (piece) {
-			materialAdvantage +=
-				piecePoints[piece.type] * (piece.color === Color.White ? 1 : -1);
+	/* const whiteKing = boardState.indexOf(
+		boardState.filter(
+			(piece) => piece?.type === PieceType.King && piece.color === Color.White
+		)[0]
+	);
+
+	const blackKing = boardState.indexOf(
+		boardState.filter(
+			(piece) => piece?.type === PieceType.King && piece.color === Color.Black
+		)[0]
+	); */
+
+	boardState.forEach((piece, index) => {
+		if (!piece) {
+			return;
+		}
+
+		let table: number[] = [];
+		// let enemyKing;
+
+		if (piece.color === Color.White) {
+			//enemyKing = blackKing;
+			switch (piece.type) {
+				case PieceType.Pawn:
+					table = pawnPSTableW;
+					break;
+				case PieceType.Bishop:
+					table = bishopPSTableW;
+					break;
+				case PieceType.Knight:
+					table = knightPSTableW;
+					break;
+				case PieceType.Rook:
+					table = rookPSTableW;
+					break;
+				case PieceType.Queen:
+					table = queenPSTableW;
+					break;
+				case PieceType.King:
+					table = kingPSTableW;
+					break;
+			}
+		} else {
+			//enemyKing = whiteKing;
+			switch (piece.type) {
+				case PieceType.Pawn:
+					table = pawnPSTableB;
+					break;
+				case PieceType.Bishop:
+					table = bishopPSTableB;
+					break;
+				case PieceType.Knight:
+					table = knightPSTableB;
+					break;
+				case PieceType.Rook:
+					table = rookPSTableB;
+					break;
+				case PieceType.Queen:
+					table = queenPSTableB;
+					break;
+				case PieceType.King:
+					table = kingPSTableB;
+					break;
+			}
+		}
+
+		const materialPoints = piecePoints[piece.type];
+		const positionPoints = table[index];
+
+		//const kingProximityPoints = distanceToEnemyKing(enemyKing, index) * 60;
+
+		if (piece?.color === side) {
+			myScore += materialPoints + positionPoints /*  + kingProximityPoints */;
+		} else {
+			opponentScore +=
+				materialPoints + positionPoints /* + kingProximityPoints */;
 		}
 	});
 
-	return materialAdvantage * (side === Color.White ? 1 : -1);
+	return myScore - opponentScore;
+};
+
+const distanceToEnemyKing = (
+	enemyKingPos: number,
+	piecePos: number
+): number => {
+	const oneOffsets = [8, -8, -1, 1, 7, -7, 9, -9];
+	const twoOffsets = [16, -16, -2, 2, 14, -14, 18, -18];
+
+	if (oneOffsets.includes(piecePos - enemyKingPos)) {
+		return 2;
+	} else if (twoOffsets.includes(piecePos - enemyKingPos)) {
+		return 1;
+	}
+
+	return 0;
 };

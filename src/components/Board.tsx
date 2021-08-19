@@ -3,6 +3,7 @@
 import { jsx } from "@emotion/react";
 import React, { useState } from "react";
 import styled from "@emotion/styled";
+import { css } from "@emotion/react";
 
 import { Piece, PieceType, Color, Move, GameState } from "../interfaces";
 
@@ -38,6 +39,15 @@ const Board = ({ gameState, lastMove, onMakeMove }: PropTypes) => {
 						lastMove?.fromSquare === index || lastMove?.toSquare === index
 					}
 				>
+					<span
+						style={{
+							position: "absolute",
+							top: "0px",
+							left: "0px",
+						}}
+					>
+						{index}
+					</span>
 					{piece ? (
 						piece.color === gameState.currentPlayer ? (
 							<div
@@ -60,7 +70,11 @@ const Board = ({ gameState, lastMove, onMakeMove }: PropTypes) => {
 		e.preventDefault();
 	};
 
-	const onDragStart = (e: React.DragEvent, tilePos: number, piece: string) => {
+	const onDragStart = async (
+		e: React.DragEvent,
+		tilePos: number,
+		piece: string
+	) => {
 		(e.currentTarget as HTMLElement).style.opacity = "0";
 		e.dataTransfer.setData("tilePosition", tilePos.toString());
 		let dragImage = new Image();
