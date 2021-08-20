@@ -45,9 +45,7 @@ const Board = ({ gameState, lastMove, onMakeMove }: PropTypes) => {
 							top: "0px",
 							left: "0px",
 						}}
-					>
-						{index}
-					</span>
+					></span>
 					{piece ? (
 						piece.color === gameState.currentPlayer ? (
 							<div
