@@ -19,13 +19,15 @@ import {
 	bishopPSTableB,
 	rookPSTableB,
 	queenPSTableB,
-	kingPSTableB,
+	kingPSTableEarlyB,
+	kingPSTableEndB,
 	pawnPSTableW,
 	knightPSTableW,
 	bishopPSTableW,
 	rookPSTableW,
 	queenPSTableW,
-	kingPSTableW,
+	kingPSTableEndW,
+	kingPSTableEarlyW,
 } from "./PieceSquareTables";
 
 var attackMoves: { piece: Piece; squares: number[] }[] = [];
@@ -1174,17 +1176,47 @@ export const evaluateMaterialAdvantage = (
 	let myScore = 0;
 	let opponentScore = 0;
 
-	/* const whiteKing = boardState.indexOf(
-		boardState.filter(
-			(piece) => piece?.type === PieceType.King && piece.color === Color.White
-		)[0]
-	);
+	let isEndgame = false;
+	let isWhiteEndgame = false;
 
-	const blackKing = boardState.indexOf(
-		boardState.filter(
-			(piece) => piece?.type === PieceType.King && piece.color === Color.Black
-		)[0]
-	); */
+	// Endgame if no queens are on the board or every player that has a queen doesn't have minor pieces
+	const whiteQueen: Piece = {
+		type: PieceType.Queen,
+		color: Color.White,
+	};
+
+	if (!boardState.includes(whiteQueen)) isWhiteEndgame = true;
+	else {
+		const whiteMinorPieceCount = boardState.filter(
+			(piece) =>
+				piece?.color == Color.White &&
+				(piece?.type == PieceType.Bishop ||
+					piece?.type == PieceType.Knight ||
+					piece?.type == PieceType.Rook)
+		);
+
+		if (whiteMinorPieceCount.length == 0) isWhiteEndgame = true;
+	}
+
+	// Check if black triggers endgame only if white does
+	if (isWhiteEndgame) {
+		const blackQueen: Piece = {
+			type: PieceType.Queen,
+			color: Color.Black,
+		};
+		if (!boardState.includes(blackQueen)) isEndgame = true;
+		else {
+			const blackMinorPieceCount = boardState.filter(
+				(piece) =>
+					piece?.color == Color.Black &&
+					(piece?.type == PieceType.Bishop ||
+						piece?.type == PieceType.Knight ||
+						piece?.type == PieceType.Rook)
+			);
+
+			if (blackMinorPieceCount.length == 0) isEndgame = true;
+		}
+	}
 
 	boardState.forEach((piece, index) => {
 		if (!piece) {
@@ -1213,7 +1245,8 @@ export const evaluateMaterialAdvantage = (
 					table = queenPSTableW;
 					break;
 				case PieceType.King:
-					table = kingPSTableW;
+					if (isEndgame) table = kingPSTableEndW;
+					else table = kingPSTableEarlyW;
 					break;
 			}
 		} else {
@@ -1235,7 +1268,8 @@ export const evaluateMaterialAdvantage = (
 					table = queenPSTableB;
 					break;
 				case PieceType.King:
-					table = kingPSTableB;
+					if (isEndgame) table = kingPSTableEndB;
+					else table = kingPSTableEarlyB;
 					break;
 			}
 		}

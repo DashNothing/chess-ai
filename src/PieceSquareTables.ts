@@ -69,7 +69,7 @@ export const queenPSTableB = [
 export const queenPSTableW = [...queenPSTableB].reverse();
 
 // prettier-ignore
-export const kingPSTableB = [
+export const kingPSTableEarlyB = [
   -30,-40,-40,-50,-50,-40,-40,-30,
   -30,-40,-40,-50,-50,-40,-40,-30,
   -30,-40,-40,-50,-50,-40,-40,-30,
@@ -80,4 +80,18 @@ export const kingPSTableB = [
   20, 30, 10,  0,  0, 10, 30, 20
 ]
 
-export const kingPSTableW = [...kingPSTableB].reverse();
+export const kingPSTableEarlyW = [...kingPSTableEarlyB].reverse();
+
+// prettier-ignore
+export const kingPSTableEndB = [
+  -50,-40,-30,-20,-20,-30,-40,-50,
+  -30,-20,-10,  0,  0,-10,-20,-30,
+  -30,-10, 20, 30, 30, 20,-10,-30,
+  -30,-10, 30, 40, 40, 30,-10,-30,
+  -30,-10, 30, 40, 40, 30,-10,-30,
+  -30,-10, 20, 30, 30, 20,-10,-30,
+  -30,-30,  0,  0,  0,  0,-30,-30,
+  -50,-30,-30,-30,-30,-30,-30,-50
+]
+
+export const kingPSTableEndW = [...kingPSTableEndB].reverse();
