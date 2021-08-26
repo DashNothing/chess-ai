@@ -35,7 +35,7 @@ const castleCheckFEN = "8/q7/8/8/8/8/8/4K2R w KQkq - 2 20";
 
 function App() {
 	const [gameState, setGameState] = useState<GameState>(
-		gameStateFromFEN(whiteCheckmateFEN)
+		gameStateFromFEN(startingFEN)
 	);
 	const [lastMove, setLastMove] = useState<Move | null>(null);
 	const [isPromotionModalShowing, setIsPromotionModalShowing] = useState(false);
