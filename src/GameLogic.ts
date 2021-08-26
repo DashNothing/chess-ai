@@ -1218,16 +1218,29 @@ export const evaluateMaterialAdvantage = (
 		}
 	}
 
+	let whiteKingPos: number;
+	let blackKingPos: number;
+
+	// Get king positions for king proximity
+	if (isEndgame) {
+		whiteKingPos = boardState.findIndex(
+			(piece) => piece?.color === Color.White && piece.type === PieceType.King
+		);
+		blackKingPos = boardState.findIndex(
+			(piece) => piece?.color === Color.Black && piece.type === PieceType.King
+		);
+	}
+
 	boardState.forEach((piece, index) => {
 		if (!piece) {
 			return;
 		}
 
 		let table: number[] = [];
-		// let enemyKing;
+		let enemyKingPos: number | null = null;
 
 		if (piece.color === Color.White) {
-			//enemyKing = blackKing;
+			if (isEndgame) enemyKingPos = blackKingPos;
 			switch (piece.type) {
 				case PieceType.Pawn:
 					table = pawnPSTableW;
@@ -1250,7 +1263,7 @@ export const evaluateMaterialAdvantage = (
 					break;
 			}
 		} else {
-			//enemyKing = whiteKing;
+			if (isEndgame) enemyKingPos = whiteKingPos;
 			switch (piece.type) {
 				case PieceType.Pawn:
 					table = pawnPSTableB;
@@ -1277,7 +1290,9 @@ export const evaluateMaterialAdvantage = (
 		const materialPoints = piecePoints[piece.type];
 		const positionPoints = table[index];
 
-		//const kingProximityPoints = distanceToEnemyKing(enemyKing, index) * 60;
+		let kingProximityPoints = 0;
+		if (isEndgame)
+			kingProximityPoints = getKingProximityModifier(enemyKingPos!, index) * 60;
 
 		if (piece?.color === side) {
 			myScore += materialPoints + positionPoints /*  + kingProximityPoints */;
@@ -1290,12 +1305,14 @@ export const evaluateMaterialAdvantage = (
 	return myScore - opponentScore;
 };
 
-const distanceToEnemyKing = (
+const getKingProximityModifier = (
 	enemyKingPos: number,
 	piecePos: number
 ): number => {
 	const oneOffsets = [8, -8, -1, 1, 7, -7, 9, -9];
-	const twoOffsets = [16, -16, -2, 2, 14, -14, 18, -18];
+	const twoOffsets = [
+		16, -16, 17, -17, 18, -18, 10, -10, 2, -2, 6, -6, 14, -14, 15, -15,
+	];
 
 	if (oneOffsets.includes(piecePos - enemyKingPos)) {
 		return 2;

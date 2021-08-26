@@ -105,8 +105,8 @@ export const getAlphaBetaMove = (gameState: GameState): Move | undefined => {
 			let score: number =
 				alphaBeta(makeMove(gameState, move), -1 * beta, -1 * alpha, depth - 1) *
 				-1;
-			if (score >= beta) return beta; //  fail hard beta-cutoff
-			if (score > alpha) alpha = score; // alpha acts like max in MiniMax
+			if (score >= beta) return beta;
+			if (score > alpha) alpha = score;
 		}
 
 		return alpha;
@@ -123,10 +123,11 @@ export const getAlphaBetaMove = (gameState: GameState): Move | undefined => {
 	for (const move of allLegalMoves) {
 		let moveScore: number = alphaBeta(
 			makeMove(gameState, move),
-			Number.NEGATIVE_INFINITY,
-			Number.POSITIVE_INFINITY,
+			-50000,
+			50000,
 			depth
 		);
+		console.log("Move: " + move + " has scored " + moveScore);
 		if (moveScore <= bestMoveScore) {
 			bestMoveScore = moveScore;
 			bestMovesWithScores.push({
@@ -136,9 +137,11 @@ export const getAlphaBetaMove = (gameState: GameState): Move | undefined => {
 		}
 	}
 
+	console.log("Best move score for AI is: " + bestMoveScore);
+
 	// Only keep the best moves
 	bestMovesWithScores = bestMovesWithScores.filter(
-		({ move, score }) => score === bestMoveScore
+		({ move, score }) => score - bestMoveScore <= 15
 	);
 
 	endTime = Date.now();
@@ -150,6 +153,12 @@ export const getAlphaBetaMove = (gameState: GameState): Move | undefined => {
 	if (bestMovesWithScores.length == 0) {
 		return undefined;
 	}
+
+	console.log("Best moves: " + bestMovesWithScores.length);
+	console.log(
+		"Random best move index: " +
+			Math.floor(Math.random() * bestMovesWithScores.length)
+	);
 
 	return bestMovesWithScores[
 		Math.floor(Math.random() * bestMovesWithScores.length)

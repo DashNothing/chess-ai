@@ -29,13 +29,13 @@ const checkFEN = "8/2k2q2/8/5R2/2n5/5K2/8/8 w - - 2 20";
 
 const checkmateFEN = "K7/8/1rq5/8/8/8/8/8 w - - 2 20";
 
-const whiteCheckmateFEN = "k7/8/1R2Q3/8/8/8/8/8 w - - 2 20";
+const whiteCheckmateFEN = "k7/8/1R2Q3/8/8/8/8/6K1 w - - 2 20";
 
 const castleCheckFEN = "8/q7/8/8/8/8/8/4K2R w KQkq - 2 20";
 
 function App() {
 	const [gameState, setGameState] = useState<GameState>(
-		gameStateFromFEN(checkFEN)
+		gameStateFromFEN(whiteCheckmateFEN)
 	);
 	const [lastMove, setLastMove] = useState<Move | null>(null);
 	const [isPromotionModalShowing, setIsPromotionModalShowing] = useState(false);
@@ -44,9 +44,12 @@ function App() {
 	const [squareToPromote, setSquareToPromote] = useState<number | null>(null);
 
 	useEffect(() => {
+		console.log("Checking chackmate for: " + gameState.currentPlayer);
 		// Check for checkmate and stalemates
 		const responseMoves = generateLegalMoves(gameState);
 		if (responseMoves.length === 0) {
+			console.log("Generated moves for " + gameState.currentPlayer);
+			console.log(responseMoves.length);
 			const kingAttacks = getKingAttacks(gameState);
 			// checkmate
 			if (kingAttacks.length > 0) {
@@ -60,6 +63,7 @@ function App() {
 
 		if (gameState.currentPlayer === Color.Black) {
 			let computerMove: Move | undefined = getAlphaBetaMove(gameState);
+			console.log("AI move: " + computerMove);
 			if (!computerMove) {
 				setIsGameOverModalShowing(true);
 				return;

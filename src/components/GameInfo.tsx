@@ -38,7 +38,7 @@ const GameInfo = ({ gameState }: PropTypes) => {
 				<p>Full moves: {gameState.fullMoves}</p>
 			</div>
 			<p>
-				Material advantage:{" "}
+				Evaluation score:{" "}
 				{evaluateMaterialAdvantage(gameState.boardState, Color.White)}
 			</p>
 		</Wrapper>
